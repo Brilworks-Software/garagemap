@@ -9,6 +9,7 @@ import { AuthService } from "@/firebase/services/AuthService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -95,30 +96,30 @@ export default function LoginPage() {
         {/* Logo/Header */}
         <div className="text-center mb-12">
           <Link href="/" className="inline-flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-2xl mb-4 hover:opacity-80 transition-opacity">
-            <div className="w-6 h-6 bg-[#3b82f6] shadow-[0_0_15px_#3b82f6] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]"></div>
+            <div className={`w-6 h-6 ${colorClasses.iconBgBlue} shadow-[0_0_15px_${colors.primary.blue}] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]`} style={{ boxShadow: `0 0 15px ${colors.primary.blue}` }}></div>
             GARAGEMAP_OS
           </Link>
-          <p className="font-mono text-xs text-[#22d3ee] uppercase tracking-wider opacity-80">
+          <p className={`font-mono text-xs ${colorClasses.textCyan} uppercase tracking-wider opacity-80`}>
             {/* // */} AUTHENTICATION_PROTOCOL
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-10 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <div className={`alloy-card ${colorClasses.cardGradient} ${colorClasses.borderDefault} p-10 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
           {/* Hex Bolts */}
           <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
           <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
           <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
           <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
 
-          <h2 className="font-mono text-xs mb-8 text-[#3b82f6] uppercase tracking-wider">
+          <h2 className={`font-mono text-xs mb-8 ${colorClasses.textBlue} uppercase tracking-wider`}>
             SYSTEM_ACCESS
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
+              <label htmlFor="email" className={`block font-mono text-[0.65rem] ${colorClasses.textSecondary} mb-2 uppercase tracking-wider`}>
                 Email_Address
               </label>
               <input
@@ -127,14 +128,26 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
+                style={{ 
+                  backgroundColor: colors.background.input,
+                  borderColor: colors.border.input,
+                }}
+                className={`w-full px-4 py-3 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none transition-all duration-300 border`}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colors.primary.blue;
+                  e.target.style.boxShadow = `0 0 0 1px ${colors.primary.blue}`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colors.border.input;
+                  e.target.style.boxShadow = 'none';
+                }}
                 placeholder="user@garagemap.io"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
+              <label htmlFor="password" className={`block font-mono text-[0.65rem] ${colorClasses.textSecondary} mb-2 uppercase tracking-wider`}>
                 Password
               </label>
               <input
@@ -143,15 +156,27 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
+                style={{ 
+                  backgroundColor: colors.background.input,
+                  borderColor: colors.border.input,
+                }}
+                className={`w-full px-4 py-3 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none transition-all duration-300 border`}
+                onFocus={(e) => {
+                  e.target.style.borderColor = colors.primary.blue;
+                  e.target.style.boxShadow = `0 0 0 1px ${colors.primary.blue}`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = colors.border.input;
+                  e.target.style.boxShadow = 'none';
+                }}
                 placeholder="••••••••"
               />
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="bg-[#ef4444]/20 border border-[#ef4444]/50 p-3 rounded">
-                <p className="font-mono text-xs text-[#ef4444]">{error}</p>
+              <div className={`${colorClasses.badgeError} border p-3 rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                <p className={`font-mono text-xs ${colorClasses.textRed}`}>{error}</p>
               </div>
             )}
 
@@ -162,11 +187,11 @@ export default function LoginPage() {
                   type="checkbox"
                   className="w-4 h-4 bg-[#1a1c1e] border border-white/10 text-[#3b82f6] focus:ring-[#3b82f6] focus:ring-1 rounded-sm"
                 />
-                <span className="font-mono text-[0.7rem] text-[#94a3b8] uppercase">Remember_Me</span>
+                <span className={`font-mono text-[0.7rem] ${colorClasses.textSecondary} uppercase`}>Remember_Me</span>
               </label>
               <Link
                 href="/auth/forgotpassword"
-                className="font-mono text-[0.7rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors duration-300 uppercase"
+                className={`font-mono text-[0.7rem] ${colorClasses.textCyan} ${colorClasses.textBlue.replace('text-', 'hover:text-')} transition-colors duration-300 uppercase`}
               >
                 Forgot_Password?
               </Link>
@@ -176,7 +201,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={signInMutation.isPending}
-              className="w-full inline-flex items-center justify-center gap-3 bg-[#e2e8f0] text-[#0f172a] py-4 px-8 font-mono font-bold uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className={`w-full inline-flex items-center justify-center gap-3 ${colorClasses.buttonPrimary} py-4 px-8 font-mono font-bold uppercase transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0`}
             >
               {signInMutation.isPending ? (
                 <>
@@ -198,13 +223,16 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="mt-8 pt-8 border-t border-white/5">
-            <p className="text-center font-mono text-[0.7rem] text-[#94a3b8] mb-4">
+          <div className={`mt-8 pt-8 border-t ${colorClasses.borderDefault}`}>
+            <p className={`text-center font-mono text-[0.7rem] ${colorClasses.textSecondary} mb-4`}>
               NO_ACCOUNT_REGISTERED?
             </p>
             <Link
               href="/auth/register"
-              className="block w-full text-center font-mono text-sm text-[#22d3ee] hover:text-[#3b82f6] transition-all duration-300 uppercase tracking-wider py-2 border border-[#22d3ee]/30 hover:border-[#3b82f6]/50"
+              className={`block w-full text-center font-mono text-sm ${colorClasses.textCyan} ${colorClasses.textBlue.replace('text-', 'hover:text-')} transition-all duration-300 uppercase tracking-wider py-2 border`}
+              style={{ borderColor: `${colors.primary.cyan}4d` }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${colors.primary.blue}80`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${colors.primary.cyan}4d`; }}
             >
               CREATE_NEW_ACCOUNT
             </Link>
@@ -215,7 +243,7 @@ export default function LoginPage() {
         <div className="mt-8 text-center">
           <Link
             href="/"
-            className="font-mono text-xs text-[#94a3b8] hover:text-[#22d3ee] transition-colors duration-300 uppercase tracking-wider"
+            className={`font-mono text-xs ${colorClasses.textSecondary} ${colorClasses.textCyan.replace('text-', 'hover:text-')} transition-colors duration-300 uppercase tracking-wider`}
           >
             ← RETURN_TO_HOME
           </Link>
@@ -224,26 +252,26 @@ export default function LoginPage() {
 
       {/* Email Verification Modal */}
       <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
-        <DialogContent className="bg-[#25282c] border-white/10 text-white">
+        <DialogContent style={{ backgroundColor: colors.background.surface }} className={`${colorClasses.borderInput} ${colorClasses.textPrimary}`}>
           <DialogHeader>
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 rounded-full bg-[#22d3ee]/20 flex items-center justify-center">
-                <Mail className="h-8 w-8 text-[#22d3ee]" />
+              <div className={`w-16 h-16 rounded-full ${colorClasses.iconBgCyan} flex items-center justify-center`}>
+                <Mail className="h-8 w-8" />
               </div>
             </div>
-            <DialogTitle className="font-mono uppercase text-[#3b82f6] text-center">
+            <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue} text-center`}>
               VERIFICATION_EMAIL_SENT
             </DialogTitle>
-            <DialogDescription className="text-[#94a3b8] font-mono text-sm text-center mt-4">
+            <DialogDescription className={`${colorClasses.textSecondary} font-mono text-sm text-center mt-4`}>
               A verification link has been sent to your email address. Please check your inbox and click the verification link to activate your account.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 space-y-4">
-            <div className="bg-[#1a1c1e] border border-white/10 p-4 rounded">
-              <p className="font-mono text-xs text-[#94a3b8] mb-2">Email sent to:</p>
-              <p className="font-mono text-sm text-white font-bold">{email || "your email"}</p>
+            <div style={{ backgroundColor: colors.background.input }} className={`${colorClasses.borderInput} p-4 rounded`}>
+              <p className={`font-mono text-xs ${colorClasses.textSecondary} mb-2`}>Email sent to:</p>
+              <p className={`font-mono text-sm ${colorClasses.textPrimary} font-bold`}>{email || "your email"}</p>
             </div>
-            <p className="font-mono text-xs text-[#94a3b8] text-center">
+            <p className={`font-mono text-xs ${colorClasses.textSecondary} text-center`}>
               Didn&apos;t receive the email? Check your spam folder or try signing up again.
             </p>
             <Button
@@ -251,7 +279,7 @@ export default function LoginPage() {
                 setShowVerificationModal(false);
                 router.push("/auth/login");
               }}
-              className="w-full font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]"
+              className={`w-full font-mono uppercase ${colorClasses.buttonPrimary}`}
             >
               GO TO LOGIN
             </Button>

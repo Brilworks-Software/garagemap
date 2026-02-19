@@ -1,18 +1,48 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { colors, colorClasses } from "@/lib/colors";
+import { useGetJobsByServiceId } from "@/firebase/hooks/useJob";
+import { useGetCustomersByServiceId } from "@/firebase/hooks/useCustomer";
+import { useGetInventoryByServiceId } from "@/firebase/hooks/useInventory";
+import { useGetInvoicesByServiceId } from "@/firebase/hooks/useInvoice";
+import { AuthService } from "@/firebase/services/AuthService";
+import { useGetUser } from "@/firebase/hooks/useUser";
 
 export default function DashboardPage() {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { data: userData } = useGetUser(currentUserId || "", { enabled: !!currentUserId });
+  
+  const serviceId = userData?.serviceId || "";
+  
+  const { data: jobs = [], isLoading: jobsLoading } = useGetJobsByServiceId(serviceId, { enabled: !!serviceId });
+  const { data: customers = [], isLoading: customersLoading } = useGetCustomersByServiceId(serviceId, { enabled: !!serviceId });
+  const { data: inventory = [], isLoading: inventoryLoading } = useGetInventoryByServiceId(serviceId, { enabled: !!serviceId });
+  const { data: invoices = [], isLoading: invoicesLoading } = useGetInvoicesByServiceId(serviceId, { enabled: !!serviceId });
+
   useEffect(() => {
-    // Subtle Mouse Interaction for Alloy Sheen
+    const unsubscribe = AuthService.onAuthStateChanged((user) => {
+      setCurrentUserId(user?.uid || null);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const activeJobs = jobs.filter(j => j.jobStatus === "in-progress" || j.jobStatus === "pending");
+  const completedJobs = jobs.filter(j => j.jobStatus === "completed");
+  const lowStockItems = inventory.filter(i => i.quantity <= (i.minStockLevel || 0));
+  const recentJobs = jobs.slice(0, 4);
+  const recentCustomers = customers.slice(0, 3);
+  const recentInvoices = invoices.slice(0, 4);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const cards = document.querySelectorAll(".alloy-card");
       cards.forEach((card) => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        (card as HTMLElement).style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.05) 0%, transparent 50%), linear-gradient(145deg, #2a2e33, #16181b)`;
+        (card as HTMLElement).style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(255,255,255,0.05) 0%, transparent 50%), linear-gradient(145deg, ${colors.background.card.from}, ${colors.background.card.to})`;
       });
     };
 
@@ -20,35 +50,23 @@ export default function DashboardPage() {
     return () => document.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  if (jobsLoading || customersLoading || inventoryLoading || invoicesLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="font-mono text-[#22d3ee]">LOADING_DATA...</div>
+      </div>
+    );
+  }
+
   const stats = [
-    { label: "Active Jobs", value: "24", change: "+3", color: "text-[#3b82f6]", borderColor: "#3b82f6" },
-    { label: "Total Customers", value: "156", change: "+12", color: "text-[#22d3ee]", borderColor: "#22d3ee" },
-    { label: "Pending Invoices", value: "12", change: "-2", color: "text-[#ef4444]", borderColor: "#ef4444" },
-    { label: "Parts In Stock", value: "1,284", change: "+45", color: "text-[#3b82f6]", borderColor: "#3b82f6" },
-  ];
-
-  const recentJobs = [
-    { id: "JOB-001", customer: "John Doe", vehicle: "Toyota Camry 2020", status: "In Progress", amount: "$450" },
-    { id: "JOB-002", customer: "Jane Smith", vehicle: "Honda Civic 2019", status: "Pending", amount: "$320" },
-    { id: "JOB-003", customer: "Mike Johnson", vehicle: "Ford F-150 2021", status: "Completed", amount: "$680" },
-    { id: "JOB-004", customer: "Sarah Williams", vehicle: "BMW 3 Series 2022", status: "In Progress", amount: "$890" },
-  ];
-
-  const recentCustomers = [
-    { name: "John Doe", email: "john@example.com", vehicles: 2, lastVisit: "2 days ago" },
-    { name: "Jane Smith", email: "jane@example.com", vehicles: 1, lastVisit: "5 days ago" },
-    { name: "Mike Johnson", email: "mike@example.com", vehicles: 3, lastVisit: "1 week ago" },
-  ];
-
-  const lowStockItems = [
-    { name: "Brake Pads", stock: 5, threshold: 10 },
-    { name: "Oil Filter", stock: 8, threshold: 15 },
-    { name: "Air Filter", stock: 3, threshold: 10 },
+    { label: "Active Jobs", value: activeJobs.length.toString(), change: `+${activeJobs.length}`, color: colorClasses.textBlue, borderColor: colors.primary.blue },
+    { label: "Total Customers", value: customers.length.toString(), change: `+${customers.length}`, color: colorClasses.textCyan, borderColor: colors.primary.cyan },
+    { label: "Completed Jobs", value: completedJobs.length.toString(), change: `+${completedJobs.length}`, color: colorClasses.textBlue, borderColor: colors.primary.blue },
+    { label: "Parts In Stock", value: inventory.length.toString(), change: `${inventory.length}`, color: colorClasses.textBlue, borderColor: colors.primary.blue },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
       <div>
         <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
           DASHBOARD
@@ -58,7 +76,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <div
@@ -73,17 +90,15 @@ export default function DashboardPage() {
                 {stat.value}
               </div>
               <div className="font-mono text-xs text-[#22d3ee]">
-                {stat.change} from last month
+                {stat.change} total
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Jobs */}
-        <div className="lg:col-span-2 alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
           <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
           <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
           <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
@@ -102,157 +117,183 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-4">
-            {recentJobs.map((job) => (
-              <div
-                key={job.id}
-                className="bg-[#1a1c1e] border border-white/5 p-4 hover:border-[#3b82f6]/50 transition-all duration-300"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="font-mono text-sm font-bold text-white mb-1">{job.id}</div>
-                    <div className="font-mono text-xs text-[#94a3b8]">{job.customer}</div>
-                    <div className="font-mono text-xs text-[#475569]">{job.vehicle}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-mono text-sm font-bold text-white mb-1">{job.amount}</div>
-                    <span
-                      className={`font-mono text-[0.65rem] uppercase px-2 py-1 ${
-                        job.status === "Completed"
-                          ? "bg-[#22d3ee]/20 text-[#22d3ee]"
-                          : job.status === "In Progress"
-                          ? "bg-[#3b82f6]/20 text-[#3b82f6]"
-                          : "bg-[#ef4444]/20 text-[#ef4444]"
-                      }`}
-                    >
-                      {job.status}
-                    </span>
+            {recentJobs.length === 0 ? (
+              <div className="text-center py-8 text-[#94a3b8] font-mono text-sm">NO_JOBS_FOUND</div>
+            ) : (
+              recentJobs.map((job) => (
+                <div
+                  key={job.jobId}
+                  className="bg-[#1a1c1e] border border-white/5 p-4 hover:border-[#3b82f6]/50 transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="font-mono text-sm font-bold text-white mb-1">{job.jobId}</div>
+                      <div className="font-mono text-xs text-[#94a3b8]">{job.jobTitle || "No Title"}</div>
+                      <div className="font-mono text-xs text-[#475569]">{job.jobDescription || "No Description"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-sm font-bold text-white mb-1">${job.jobAmount || 0}</div>
+                      <span
+                        className={`font-mono text-[0.65rem] uppercase px-2 py-1 ${
+                          job.jobStatus === "completed"
+                            ? "bg-[#22d3ee]/20 text-[#22d3ee]"
+                            : job.jobStatus === "in-progress"
+                            ? "bg-[#3b82f6]/20 text-[#3b82f6]"
+                            : "bg-[#ef4444]/20 text-[#ef4444]"
+                        }`}
+                      >
+                        {job.jobStatus}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Sidebar Content */}
-        <div className="space-y-6">
-          {/* Recent Customers */}
-          <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
-            <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+        <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+          <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
 
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
-                RECENT_CUSTOMERS
-              </h2>
-              <Link
-                href="/user/customers"
-                className="font-mono text-[0.65rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors uppercase"
-              >
-                VIEW_ALL →
-              </Link>
-            </div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+              RECENT_INVOICES
+            </h2>
+            <Link
+              href="/user/invoices"
+              className="font-mono text-[0.65rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors uppercase"
+            >
+              VIEW_ALL →
+            </Link>
+          </div>
 
-            <div className="space-y-3">
-              {recentCustomers.map((customer, index) => (
+          <div className="space-y-4">
+            {recentInvoices.length === 0 ? (
+              <div className="text-center py-8 text-[#94a3b8] font-mono text-sm">NO_INVOICES_FOUND</div>
+            ) : (
+              recentInvoices.map((invoice) => (
                 <div
-                  key={index}
+                  key={invoice.invoiceId}
+                  className="bg-[#1a1c1e] border border-white/5 p-4 hover:border-[#3b82f6]/50 transition-all duration-300"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="font-mono text-sm font-bold text-white mb-1">{invoice.invoiceNumber}</div>
+                      <div className="font-mono text-xs text-[#94a3b8]">Job: {invoice.jobId}</div>
+                      <div className="font-mono text-xs text-[#475569]">{new Date(invoice.issueDate).toLocaleDateString()}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-sm font-bold text-white mb-1">${invoice.total}</div>
+                      <span
+                        className={`font-mono text-[0.65rem] uppercase px-2 py-1 ${
+                          invoice.status === "paid"
+                            ? "bg-[#22d3ee]/20 text-[#22d3ee]"
+                            : invoice.status === "sent"
+                            ? "bg-[#3b82f6]/20 text-[#3b82f6]"
+                            : "bg-[#ef4444]/20 text-[#ef4444]"
+                        }`}
+                      >
+                        {invoice.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+          <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+              RECENT_CUSTOMERS
+            </h2>
+            <Link
+              href="/user/customers"
+              className="font-mono text-[0.65rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors uppercase"
+            >
+              VIEW_ALL →
+            </Link>
+          </div>
+
+          <div className="space-y-3">
+            {recentCustomers.length === 0 ? (
+              <div className="text-center py-4 text-[#94a3b8] font-mono text-sm">NO_CUSTOMERS_FOUND</div>
+            ) : (
+              recentCustomers.map((customer) => (
+                <div
+                  key={customer.customerId}
                   className="bg-[#1a1c1e] border border-white/5 p-3 hover:border-[#3b82f6]/50 transition-all duration-300"
                 >
-                  <div className="font-mono text-sm font-bold text-white mb-1">{customer.name}</div>
-                  <div className="font-mono text-xs text-[#94a3b8] mb-1">{customer.email}</div>
+                  <div className="font-mono text-sm font-bold text-white mb-1">{customer.customerName || "Unknown"}</div>
+                  <div className="font-mono text-xs text-[#94a3b8] mb-1">{customer.customerEmail || "No Email"}</div>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[0.65rem] text-[#475569]">
-                      {customer.vehicles} vehicles
+                      {customer.customerPhone || "No Phone"}
                     </span>
                     <span className="font-mono text-[0.65rem] text-[#475569]">
-                      {customer.lastVisit}
+                      {customer.customerStatus || "active"}
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-[#ef4444]/30 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+          <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+          <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
+
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-mono text-xs text-[#ef4444] uppercase tracking-wider">
+              LOW_STOCK_ALERT
+            </h2>
+            <Link
+              href="/user/inventory"
+              className="font-mono text-[0.65rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors uppercase"
+            >
+              VIEW_ALL →
+            </Link>
           </div>
 
-          {/* Low Stock Alert */}
-          <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-[#ef4444]/30 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
-            <div className="absolute top-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute bottom-2.5 left-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-            <div className="absolute bottom-2.5 right-2.5 w-2 h-2 bg-[#334155] [clip-path:polygon(25%_0%,75%_0%,100%_50%,75%_100%,25%_100%,0%_50%)]"></div>
-
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-mono text-xs text-[#ef4444] uppercase tracking-wider">
-                LOW_STOCK_ALERT
-              </h2>
-              <Link
-                href="/user/inventory"
-                className="font-mono text-[0.65rem] text-[#22d3ee] hover:text-[#3b82f6] transition-colors uppercase"
-              >
-                VIEW_ALL →
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {lowStockItems.map((item, index) => (
+          <div className="space-y-3">
+            {lowStockItems.length === 0 ? (
+              <div className="text-center py-4 text-[#94a3b8] font-mono text-sm">ALL_STOCK_LEVELS_OK</div>
+            ) : (
+              lowStockItems.map((item) => (
                 <div
-                  key={index}
+                  key={item.itemId}
                   className="bg-[#1a1c1e] border border-[#ef4444]/30 p-3"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="font-mono text-sm font-bold text-white">{item.name}</div>
+                    <div className="font-mono text-sm font-bold text-white">{item.itemName || "Unknown Item"}</div>
                     <div className="font-mono text-xs text-[#ef4444]">
-                      {item.stock} / {item.threshold}
+                      {item.quantity} / {item.minStockLevel || 0}
                     </div>
                   </div>
                   <div className="h-1 bg-black relative overflow-hidden">
                     <div
                       className="absolute top-0 left-0 h-full bg-[#ef4444]"
-                      style={{ width: `${(item.stock / item.threshold) * 100}%` }}
+                      style={{ width: `${(item.quantity / (item.minStockLevel || 1)) * 100}%` }}
                     ></div>
                   </div>
                 </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="alloy-card bg-gradient-to-br from-[#2a2e33] to-[#16181b] border border-white/5 p-6 relative overflow-hidden shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
-        <h2 className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider mb-6">
-          QUICK_ACTIONS
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link
-            href="/user/jobs/new"
-            className="bg-[#1a1c1e] border border-white/10 p-4 hover:border-[#3b82f6] hover:bg-[#3b82f6]/10 transition-all duration-300 text-center"
-          >
-            <div className="text-2xl mb-2">🛠</div>
-            <div className="font-mono text-xs text-white uppercase">New Job</div>
-          </Link>
-          <Link
-            href="/user/customers/new"
-            className="bg-[#1a1c1e] border border-white/10 p-4 hover:border-[#22d3ee] hover:bg-[#22d3ee]/10 transition-all duration-300 text-center"
-          >
-            <div className="text-2xl mb-2">👤</div>
-            <div className="font-mono text-xs text-white uppercase">Add Customer</div>
-          </Link>
-          <Link
-            href="/user/inventory/new"
-            className="bg-[#1a1c1e] border border-white/10 p-4 hover:border-[#3b82f6] hover:bg-[#3b82f6]/10 transition-all duration-300 text-center"
-          >
-            <div className="text-2xl mb-2">📦</div>
-            <div className="font-mono text-xs text-white uppercase">Add Part</div>
-          </Link>
-          <Link
-            href="/user/policy/new"
-            className="bg-[#1a1c1e] border border-white/10 p-4 hover:border-[#ef4444] hover:bg-[#ef4444]/10 transition-all duration-300 text-center"
-          >
-            <div className="text-2xl mb-2">🛡</div>
-            <div className="font-mono text-xs text-white uppercase">New Claim</div>
-          </Link>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ export const userKeys = {
   all: ['users'] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (uid: string) => [...userKeys.details(), uid] as const,
+  byService: (serviceId: string) => [...userKeys.all, 'service', serviceId] as const,
 };
 
 /**
@@ -54,6 +55,20 @@ export const useUpdateUser = () => {
 };
 
 /**
+ * Hook to fetch all users for a specific service.
+ * @param serviceId - The service ID.
+ * @param options - Optional React Query options.
+ */
+export const useGetUsersByServiceId = (serviceId: string, options = {}) => {
+  return useQuery<User[]>({
+    queryKey: userKeys.byService(serviceId),
+    queryFn: () => UserService.getUsersByServiceId(serviceId),
+    enabled: !!serviceId, // Only run query if serviceId is available
+    ...options,
+  });
+};
+
+/**
  * Hook to delete a user document.
  */
 export const useDeleteUser = () => {
@@ -63,6 +78,7 @@ export const useDeleteUser = () => {
     onSuccess: (_, uid) => {
       // Remove the deleted user's data from the cache
       queryClient.removeQueries({ queryKey: userKeys.detail(uid) });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     },
   });
 };

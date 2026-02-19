@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useResetPassword } from "@/firebase/hooks/useAuth";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

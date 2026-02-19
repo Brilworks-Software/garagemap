@@ -60,6 +60,7 @@ import { useGetUser } from "@/firebase/hooks/useUser";
 import { useGetCustomersByServiceId, useCreateCustomer, useUpdateCustomer, useDeleteCustomer } from "@/firebase/hooks/useCustomer";
 import { useGetVehiclesByServiceId } from "@/firebase/hooks/useVehicle";
 import { Customer } from "@/firebase/types";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -271,24 +272,24 @@ export default function CustomersPage() {
     switch (status) {
       case "active":
         return (
-          <Badge className="bg-[#22d3ee]/20 text-[#22d3ee] hover:bg-[#22d3ee]/30">
+          <Badge className={colorClasses.badgeSuccess}>
             Active
           </Badge>
         );
       case "inactive":
         return (
-          <Badge className="bg-[#94a3b8]/20 text-[#94a3b8] hover:bg-[#94a3b8]/30">
+          <Badge className={colorClasses.badgeMuted}>
             Inactive
           </Badge>
         );
       case "blocked":
         return (
-          <Badge className="bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30">
+          <Badge className={colorClasses.badgeError}>
             Blocked
           </Badge>
         );
       default:
-        return <Badge className="bg-[#94a3b8]/20 text-[#94a3b8]">Unknown</Badge>;
+        return <Badge className={colorClasses.badgeMuted}>Unknown</Badge>;
     }
   };
 
@@ -311,156 +312,183 @@ export default function CustomersPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
+          <h1 className={`text-4xl font-black tracking-tight ${colorClasses.textPrimary} mb-2 font-mono uppercase`}>
             CUSTOMER_MANAGEMENT
           </h1>
-          <p className="font-mono text-sm text-[#94a3b8] uppercase tracking-wider">
+          <p className={`font-mono text-sm ${colorClasses.textSecondary} uppercase tracking-wider`}>
             {/* // */} MANAGE_CUSTOMER_RECORDS_AND_SERVICE_HISTORY
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+            <Button className={`font-mono uppercase ${colorClasses.buttonPrimary}`}>
               <Plus className="h-4 w-4" />
               NEW CUSTOMER
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#25282c] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent 
+            style={{ backgroundColor: colors.background.surface }}
+            className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+          >
             <DialogHeader>
-              <DialogTitle className="font-mono uppercase text-[#3b82f6]">
+              <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
                 ADD_NEW_CUSTOMER
               </DialogTitle>
-              <DialogDescription className="text-[#94a3b8] font-mono text-xs">
+              <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
                 Register a new customer in the system
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateCustomer} className="space-y-4">
               {formError && (
-                <div className="bg-[#ef4444]/20 border border-[#ef4444]/50 p-3 rounded">
-                  <p className="font-mono text-xs text-[#ef4444]">{formError}</p>
+                <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                  <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Full Name *
                   </label>
                   <Input
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="John Doe"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Email
                   </label>
                   <Input
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="john@example.com"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Phone
                   </label>
                   <Input
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Status
                   </label>
                   <Select
                     value={customerStatus || "active"}
                     onValueChange={(value) => setCustomerStatus(value as "active" | "inactive" | "blocked" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="active" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Active</SelectItem>
-                      <SelectItem value="inactive" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Inactive</SelectItem>
-                      <SelectItem value="blocked" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Blocked</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
+                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
+                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Blocked</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer Type
                   </label>
                   <Select
                     value={customerType || "individual"}
                     onValueChange={(value) => setCustomerType(value as "individual" | "company" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="individual" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Individual</SelectItem>
-                      <SelectItem value="company" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Company</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="individual" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Individual</SelectItem>
+                      <SelectItem value="company" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Company</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Gender
                   </label>
                   <Select
                     value={customerGender || "not-specified"}
                     onValueChange={(value) => setCustomerGender(value === "not-specified" ? null : value as "male" | "female" | "other" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="not-specified" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Not specified</SelectItem>
-                      <SelectItem value="male" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Male</SelectItem>
-                      <SelectItem value="female" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Female</SelectItem>
-                      <SelectItem value="other" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Other</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="not-specified" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Not specified</SelectItem>
+                      <SelectItem value="male" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Male</SelectItem>
+                      <SelectItem value="female" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Female</SelectItem>
+                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     GST Number
                   </label>
                   <Input
                     value={customerGSTNumber}
                     onChange={(e) => setCustomerGSTNumber(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="GST123456789"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Address
                   </label>
                   <Input
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="123 Main St, City, State ZIP"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Notes
                   </label>
                   <textarea
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
-                    className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569] resize-none"
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`w-full px-4 py-3 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none focus:border-[${colors.primary.blue}] focus:ring-1 focus:ring-[${colors.primary.blue}] transition-all duration-300 resize-none`}
                     placeholder="Additional notes about the customer..."
                     rows={3}
                   />
@@ -470,15 +498,14 @@ export default function CustomersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
-                    className="flex-1 font-mono uppercase border-white/20 bg-transparent hover:bg-white/10"
-                    style={{ color: '#ffffff' }}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
                   >
                     CANCEL
                   </Button>
                   <Button
                     type="submit"
                     disabled={createCustomerMutation.isPending}
-                    className="flex-1 font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] disabled:opacity-50"
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
                   >
                     {createCustomerMutation.isPending ? "CREATING..." : "CREATE"}
                   </Button>
@@ -490,142 +517,169 @@ export default function CustomersPage() {
 
         {/* Edit Customer Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="bg-[#25282c] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent 
+            style={{ backgroundColor: colors.background.surface }}
+            className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+          >
             <DialogHeader>
-              <DialogTitle className="font-mono uppercase text-[#3b82f6]">
+              <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
                 EDIT_CUSTOMER
               </DialogTitle>
-              <DialogDescription className="text-[#94a3b8] font-mono text-xs">
+              <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
                 Update customer information
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleUpdateCustomer} className="space-y-4">
               {formError && (
-                <div className="bg-[#ef4444]/20 border border-[#ef4444]/50 p-3 rounded">
-                  <p className="font-mono text-xs text-[#ef4444]">{formError}</p>
+                <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                  <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Full Name *
                   </label>
                   <Input
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="John Doe"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Email
                   </label>
                   <Input
                     type="email"
                     value={customerEmail}
                     onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="john@example.com"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Phone
                   </label>
                   <Input
                     type="tel"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Status
                   </label>
                   <Select
                     value={customerStatus || "active"}
                     onValueChange={(value) => setCustomerStatus(value as "active" | "inactive" | "blocked" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="active" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Active</SelectItem>
-                      <SelectItem value="inactive" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Inactive</SelectItem>
-                      <SelectItem value="blocked" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Blocked</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
+                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
+                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Blocked</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer Type
                   </label>
                   <Select
                     value={customerType || "individual"}
                     onValueChange={(value) => setCustomerType(value as "individual" | "company" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="individual" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Individual</SelectItem>
-                      <SelectItem value="company" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Company</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="individual" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Individual</SelectItem>
+                      <SelectItem value="company" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Company</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Gender
                   </label>
                   <Select
                     value={customerGender || "not-specified"}
                     onValueChange={(value) => setCustomerGender(value === "not-specified" ? null : value as "male" | "female" | "other" | null)}
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="not-specified" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Not specified</SelectItem>
-                      <SelectItem value="male" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Male</SelectItem>
-                      <SelectItem value="female" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Female</SelectItem>
-                      <SelectItem value="other" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Other</SelectItem>
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
+                      <SelectItem value="not-specified" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Not specified</SelectItem>
+                      <SelectItem value="male" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Male</SelectItem>
+                      <SelectItem value="female" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Female</SelectItem>
+                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     GST Number
                   </label>
                   <Input
                     value={customerGSTNumber}
                     onChange={(e) => setCustomerGSTNumber(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="GST123456789"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Address
                   </label>
                   <Input
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="123 Main St, City, State ZIP"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Notes
                   </label>
                   <textarea
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
-                    className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569] resize-none"
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`w-full px-4 py-3 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none focus:border-[${colors.primary.blue}] focus:ring-1 focus:ring-[${colors.primary.blue}] transition-all duration-300 resize-none`}
                     placeholder="Additional notes about the customer..."
                     rows={3}
                   />
@@ -635,15 +689,14 @@ export default function CustomersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsEditDialogOpen(false)}
-                    className="flex-1 font-mono uppercase border-white/20 bg-transparent hover:bg-white/10"
-                    style={{ color: '#ffffff' }}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
                   >
                     CANCEL
                   </Button>
                   <Button
                     type="submit"
                     disabled={updateCustomerMutation.isPending}
-                    className="flex-1 font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] disabled:opacity-50"
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
                   >
                     {updateCustomerMutation.isPending ? "UPDATING..." : "UPDATE"}
                   </Button>
@@ -656,91 +709,98 @@ export default function CustomersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Total Customers
                 </p>
-                <p className="text-3xl font-bold text-white">
+                <p className={`text-3xl font-bold ${colorClasses.textPrimary}`}>
                   {isLoading ? "..." : customers.length}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-[#3b82f6]" />
+              <Users className={`h-8 w-8 ${colorClasses.textBlue}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Active Customers
                 </p>
-                <p className="text-3xl font-bold text-[#22d3ee]">
+                <p className={`text-3xl font-bold ${colorClasses.textCyan}`}>
                   {isLoading ? "..." : activeCustomers.length}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-[#22d3ee]" />
+              <Users className={`h-8 w-8 ${colorClasses.textCyan}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Inactive Customers
                 </p>
-                <p className="text-3xl font-bold text-white">
+                <p className={`text-3xl font-bold ${colorClasses.textPrimary}`}>
                   {isLoading ? "..." : customers.filter((c: Customer) => c.customerStatus === "inactive").length}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-[#94a3b8]" />
+              <Users className={`h-8 w-8 ${colorClasses.textMuted}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Blocked Customers
                 </p>
-                <p className="text-3xl font-bold text-[#ef4444]">
+                <p className={`text-3xl font-bold ${colorClasses.textRed}`}>
                   {isLoading ? "..." : customers.filter((c: Customer) => c.customerStatus === "blocked").length}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-[#ef4444]" />
+              <Users className={`h-8 w-8 ${colorClasses.textRed}`} />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colorClasses.textSecondary}`} />
               <Input
                 placeholder="Search by name, email, phone, or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
+                style={{ backgroundColor: colors.background.input }}
+                className={`pl-10 ${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono text-sm`}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px] bg-[#1a1c1e] border-white/10 font-mono">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger
+                style={{ backgroundColor: colors.background.input }}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+              >
+                <Filter className={`h-4 w-4 mr-2 ${colorClasses.textSecondary}`} />
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent className="bg-[#25282c] border-white/10">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectContent
+                style={{ backgroundColor: colors.background.surface }}
+                className={colorClasses.borderInput}
+              >
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
+                <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
+                <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
+                <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Blocked</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -748,44 +808,44 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customers Table */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
         <CardHeader>
-          <CardTitle className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+          <CardTitle className={`font-mono text-xs ${colorClasses.textBlue} uppercase tracking-wider`}>
             ALL_CUSTOMERS
           </CardTitle>
-          <CardDescription className="font-mono text-xs text-[#94a3b8]">
+          <CardDescription className={`font-mono text-xs ${colorClasses.textSecondary}`}>
             Total: {filteredCustomers.length} customers
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+              <TableRow className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Customer ID
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Name
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Contact
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Vehicles
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Total Jobs
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Total Spent
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Last Visit
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Status
                 </TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8] text-right">
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary} text-right`}>
                   Actions
                 </TableHead>
               </TableRow>
@@ -793,19 +853,19 @@ export default function CustomersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     Loading customers...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-[#ef4444] font-mono">
+                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textRed} font-mono`}>
                     Error loading customers. Please try again.
                   </TableCell>
                 </TableRow>
               ) : filteredCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -813,7 +873,7 @@ export default function CustomersPage() {
                 filteredCustomers.map((customer: Customer) => (
                   <TableRow
                     key={customer.customerId}
-                    className="border-white/10 hover:bg-white/5 cursor-pointer"
+                    className={`${colorClasses.borderHover} hover:bg-white/5 cursor-pointer`}
                     onClick={() => handleRowClick(customer)}
                   >
                     <TableCell className="font-mono text-sm font-bold text-white">
@@ -825,25 +885,25 @@ export default function CustomersPage() {
                     <TableCell>
                       <div className="space-y-1">
                         {customer.customerEmail && (
-                          <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
+                          <div className={`flex items-center gap-2 text-xs ${colorClasses.textSecondary}`}>
                             <Mail className="h-3 w-3" />
                             <span className="font-mono">{customer.customerEmail}</span>
                           </div>
                         )}
                         {customer.customerPhone && (
-                          <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
+                          <div className={`flex items-center gap-2 text-xs ${colorClasses.textSecondary}`}>
                             <Phone className="h-3 w-3" />
                             <span className="font-mono">{customer.customerPhone}</span>
                           </div>
                         )}
                         {!customer.customerEmail && !customer.customerPhone && (
-                          <span className="font-mono text-xs text-[#94a3b8]">No contact info</span>
+                          <span className={`font-mono text-xs ${colorClasses.textSecondary}`}>No contact info</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-[#3b82f6]" />
+                        <Car className={`h-4 w-4 ${colorClasses.textBlue}`} />
                         <span className="font-mono text-sm text-white">
                           {getVehicleCount(customer.customerId)}
                         </span>
@@ -855,7 +915,7 @@ export default function CustomersPage() {
                     <TableCell className="font-mono text-sm font-bold text-white">
                       -
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-[#94a3b8]">
+                    <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
                       {customer.createdAt 
                         ? (() => {
                             try {
@@ -877,15 +937,16 @@ export default function CustomersPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 hover:bg-[#3b82f6]/20"
+                            className={`h-8 w-8 p-0 hover:${colorClasses.bgBlueAlpha20}`}
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVertical className="h-4 w-4 text-[#94a3b8]" />
+                            <MoreVertical className={`h-4 w-4 ${colorClasses.textSecondary}`} />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="bg-[#25282c] border-white/10"
+                          style={{ backgroundColor: colors.background.surface }}
+                          className={colorClasses.borderInput}
                         >
                           <DropdownMenuLabel className="font-mono text-xs text-white">
                             Actions
@@ -898,7 +959,7 @@ export default function CustomersPage() {
                             }}
                             className="font-mono text-xs hover:bg-white/10"
                           >
-                            <Eye className="h-4 w-4 mr-2 text-[#22d3ee]" />
+                            <Eye className={`h-4 w-4 mr-2 ${colorClasses.textCyan}`} />
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem 
@@ -908,11 +969,11 @@ export default function CustomersPage() {
                               handleEditCustomer(customer);
                             }}
                           >
-                            <Edit className="h-4 w-4 mr-2 text-[#3b82f6]" />
+                            <Edit className={`h-4 w-4 mr-2 ${colorClasses.textBlue}`} />
                             Edit Customer
                           </DropdownMenuItem>
                           <DropdownMenuItem className="font-mono text-xs hover:bg-white/10">
-                            <Car className="h-4 w-4 mr-2 text-[#3b82f6]" />
+                            <Car className={`h-4 w-4 mr-2 ${colorClasses.textBlue}`} />
                             View Vehicles
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-white/10" />
@@ -921,7 +982,7 @@ export default function CustomersPage() {
                               e.stopPropagation();
                               handleDeleteCustomer(customer.customerId);
                             }}
-                            className="font-mono text-xs text-[#ef4444] hover:bg-[#ef4444]/20"
+                            className={`font-mono text-xs ${colorClasses.textRed} hover:${colorClasses.bgRedAlpha20}`}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
@@ -939,12 +1000,15 @@ export default function CustomersPage() {
 
       {/* Customer Detail Modal */}
       <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="bg-[#25282c] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent 
+          style={{ backgroundColor: colors.background.surface }}
+          className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+        >
           <DialogHeader>
-            <DialogTitle className="font-mono uppercase text-[#3b82f6]">
+            <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
               CUSTOMER_DETAILS
             </DialogTitle>
-            <DialogDescription className="text-[#94a3b8] font-mono text-xs">
+            <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
               View and manage customer information
             </DialogDescription>
           </DialogHeader>
@@ -953,15 +1017,18 @@ export default function CustomersPage() {
               {/* Customer Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer ID
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerId}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Status
                   </label>
                   <div className="px-4 py-3">
@@ -969,84 +1036,111 @@ export default function CustomersPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Name
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerName || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Type
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerType || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Email
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerEmail || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Phone
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerPhone || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Gender
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerGender || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     GST Number
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerGSTNumber || "N/A"}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Address
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {selectedCustomer.customerAddress || "N/A"}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicles
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white flex items-center gap-2">
-                    <Car className="h-4 w-4 text-[#3b82f6]" />
+                    <Car className={`h-4 w-4 ${colorClasses.textBlue}`} />
                     {getVehicleCount(selectedCustomer.customerId)}
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Created At
                   </label>
-                  <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                  <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                     {formatDate(selectedCustomer.createdAt)}
                   </div>
                 </div>
                 {selectedCustomer.customerNotes && (
                   <div className="col-span-2">
-                    <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                    <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                       Notes
                     </label>
-                    <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
+                    <div 
+                    style={{ backgroundColor: colors.background.input, borderColor: colors.border.input }}
+                    className={`px-4 py-3 font-mono text-sm ${colorClasses.textPrimary}`}
+                  >
                       {selectedCustomer.customerNotes}
                     </div>
                   </div>
@@ -1054,14 +1148,14 @@ export default function CustomersPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4 pt-4 border-t border-white/10">
+              <div className={`flex gap-4 pt-4 border-t ${colorClasses.borderDefault}`}>
                 <Button
                   onClick={() => {
                     if (selectedCustomer) {
                       handleEditCustomer(selectedCustomer);
                     }
                   }}
-                  className="flex-1 font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#3b82f6] text-white hover:bg-[#2563eb] hover:shadow-[0_0_30px_rgba(59,130,246,0.4)]"
+                  className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   EDIT CUSTOMER
@@ -1069,7 +1163,8 @@ export default function CustomersPage() {
                 <Button
                   onClick={() => handleDeleteCustomer(selectedCustomer.customerId)}
                   disabled={deleteCustomerMutation.isPending}
-                  className="flex-1 font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#ef4444] text-white hover:bg-[#dc2626] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] disabled:opacity-50"
+                  className={`flex-1 font-mono uppercase bg-[${colors.primary.red}] hover:bg-[${colors.primary.red}]/90 disabled:opacity-50`}
+                  style={{ color: colors.text.buttonPrimary }}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   {deleteCustomerMutation.isPending ? "DELETING..." : "DELETE"}

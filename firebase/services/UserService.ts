@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { User } from "../types";
 
@@ -62,6 +62,34 @@ export const UserService = {
       const err = error as { message?: string };
       console.error("Error updating user document: ", err);
       throw new Error(err.message || "Failed to update user document");
+    }
+  },
+
+  /**
+   * Retrieves all users for a specific service.
+   * @param serviceId - The service ID.
+   * @returns Array of user data.
+   */
+  getUsersByServiceId: async (serviceId: string): Promise<User[]> => {
+    try {
+      const usersRef = collection(db, USERS_COLLECTION);
+      const q = query(usersRef, where("serviceId", "==", serviceId));
+      const querySnapshot = await getDocs(q);
+      
+      const users: User[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        users.push({
+          uid: doc.id,
+          ...data,
+        } as User);
+      });
+      
+      return users;
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error("Error fetching users by serviceId: ", err);
+      throw new Error(err.message || "Failed to fetch users");
     }
   },
 

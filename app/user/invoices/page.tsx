@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -8,6 +9,7 @@ import {
   Receipt,
   Download,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,22 +36,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { colors, colorClasses } from "@/lib/colors";
+import { AuthService } from "@/firebase/services/AuthService";
+import { useGetUser } from "@/firebase/hooks/useUser";
+import { useGetInvoicesByServiceId, useGetInvoicesByJobId } from "@/firebase/hooks/useInvoice";
+import { useGetCustomersByServiceId } from "@/firebase/hooks/useCustomer";
+import { Invoice } from "@/firebase/types";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 export default function InvoicesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const jobIdFilter = searchParams.get("jobId");
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const invoices = [
-    { id: "INV-001", customer: "John Doe", amount: "$450.00", date: "2024-01-18", dueDate: "2024-02-18", status: "Paid", jobId: "JOB-001" },
-    { id: "INV-002", customer: "Jane Smith", amount: "$320.00", date: "2024-01-17", dueDate: "2024-02-17", status: "Paid", jobId: "JOB-002" },
-    { id: "INV-003", customer: "Mike Johnson", amount: "$680.00", date: "2024-01-16", dueDate: "2024-02-16", status: "Pending", jobId: "JOB-003" },
-    { id: "INV-004", customer: "Sarah Williams", amount: "$890.00", date: "2024-01-15", dueDate: "2024-02-15", status: "Overdue", jobId: "JOB-004" },
-  ];
+  // Get current user
+  const currentUser = AuthService.getCurrentUser();
+  const { data: userData } = useGetUser(currentUser?.uid || "", {
+    enabled: !!currentUser?.uid,
+  });
 
-  const filteredInvoices = invoices.filter((invoice) => {
+  // Get serviceId
+  const serviceId = userData?.serviceId || "";
+
+  // Get invoices
+  const { data: allInvoices = [], isLoading: isLoadingInvoices, error: invoicesError } = useGetInvoicesByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
+
+  const { data: jobInvoices = [] } = useGetInvoicesByJobId(jobIdFilter || "", {
+    enabled: !!jobIdFilter,
+  });
+
+  // Get customers for display
+  const { data: customers = [] } = useGetCustomersByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
+
+  // Determine which invoices to show
+  const invoices = useMemo(() => {
+    if (jobIdFilter && jobInvoices.length > 0) {
+      return jobInvoices;
+    }
+    return allInvoices;
+  }, [jobIdFilter, jobInvoices, allInvoices]);
+
+  const getCustomerName = (customerId: string) => {
+    const customer = customers.find((c) => c.customerId === customerId);
+    return customer?.customerName || "Unknown Customer";
+  };
+
+  const filteredInvoices = invoices.filter((invoice: Invoice) => {
+    const customerName = getCustomerName(invoice.customerId);
     const matchesSearch =
-      invoice.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.customer.toLowerCase().includes(searchQuery.toLowerCase());
+      invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.invoiceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customerName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || invoice.status.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
@@ -57,101 +111,156 @@ export default function InvoicesPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "Paid":
+      case "paid":
         return (
-          <Badge className="bg-[#22d3ee]/20 text-[#22d3ee] hover:bg-[#22d3ee]/30">
+          <Badge className={colorClasses.badgeSuccess}>
             Paid
           </Badge>
         );
-      case "Pending":
+      case "sent":
         return (
-          <Badge className="bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30">
-            Pending
+          <Badge className={colorClasses.badgeInfo}>
+            Sent
           </Badge>
         );
-      case "Overdue":
+      case "draft":
         return (
-          <Badge className="bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30">
+          <Badge className={colorClasses.badgeMuted}>
+            Draft
+          </Badge>
+        );
+      case "overdue":
+        return (
+          <Badge className={colorClasses.badgeError}>
             Overdue
           </Badge>
         );
+      case "cancelled":
+        return (
+          <Badge className={colorClasses.badgeMuted}>
+            Cancelled
+          </Badge>
+        );
       default:
-        return <Badge>{status}</Badge>;
+        return <Badge className={colorClasses.badgeMuted}>{status}</Badge>;
     }
   };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDownloadInvoice = (invoice: Invoice) => {
+    if (invoice.pdfUrl) {
+      window.open(invoice.pdfUrl, '_blank');
+    } else {
+      alert("PDF not available for this invoice.");
+    }
+  };
+
+  if (isLoadingInvoices) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className={`h-8 w-8 animate-spin ${colorClasses.textBlue}`} />
+      </div>
+    );
+  }
+
+  if (invoicesError) {
+    return (
+      <div className="text-center py-8">
+        <p className={`font-mono text-sm ${colorClasses.textRed}`}>
+          Error loading invoices: {(invoicesError as Error).message}
+        </p>
+      </div>
+    );
+  }
+
+  // Calculate stats
+  const totalAmount = invoices.reduce((sum, inv) => sum + inv.total, 0);
+  const pendingInvoices = invoices.filter((inv) => inv.status === "sent" || inv.status === "draft");
+  const overdueInvoices = invoices.filter((inv) => inv.status === "overdue");
+  const paidInvoices = invoices.filter((inv) => inv.status === "paid");
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
+          <h1 className={`text-4xl font-black tracking-tight ${colorClasses.textPrimary} mb-2 font-mono uppercase`}>
             INVOICES
           </h1>
-          <p className="font-mono text-sm text-[#94a3b8] uppercase tracking-wider">
+          <p className={`font-mono text-sm ${colorClasses.textSecondary} uppercase tracking-wider`}>
             {/* // */} MANAGE_AND_TRACK_INVOICES
+            {jobIdFilter && ` (Filtered by Job)`}
           </p>
         </div>
-        <Button className="font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]">
-          <Plus className="h-4 w-4" />
-          CREATE INVOICE
-        </Button>
+        {!jobIdFilter && (
+          <Button 
+            className={`font-mono uppercase ${colorClasses.buttonPrimary}`}
+            onClick={() => router.push('/user/jobs')}
+          >
+            <Plus className="h-4 w-4" />
+            CREATE INVOICE
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Total Invoices</p>
-                <p className="text-2xl font-bold text-white">{invoices.length}</p>
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total Invoices</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>{invoices.length}</p>
               </div>
-              <div className="w-12 h-12 bg-[#3b82f6]/20 rounded flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-[#3b82f6]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgBlue} rounded flex items-center justify-center`}>
+                <Receipt className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Total Amount</p>
-                <p className="text-2xl font-bold text-white">$2,340.00</p>
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total Amount</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>{formatCurrency(totalAmount)}</p>
               </div>
-              <div className="w-12 h-12 bg-[#22d3ee]/20 rounded flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-[#22d3ee]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgCyan} rounded flex items-center justify-center`}>
+                <Receipt className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Pending</p>
-                <p className="text-2xl font-bold text-white">
-                  {invoices.filter((inv) => inv.status === "Pending").length}
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Pending</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>
+                  {pendingInvoices.length}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-[#ef4444]/20 rounded flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-[#ef4444]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgRed} rounded flex items-center justify-center`}>
+                <Receipt className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Overdue</p>
-                <p className="text-2xl font-bold text-white">
-                  {invoices.filter((inv) => inv.status === "Overdue").length}
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Overdue</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>
+                  {overdueInvoices.length}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-[#ef4444]/20 rounded flex items-center justify-center">
-                <Receipt className="h-6 w-6 text-[#ef4444]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgRed} rounded flex items-center justify-center`}>
+                <Receipt className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -159,28 +268,35 @@ export default function InvoicesPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colorClasses.textSecondary}`} />
               <Input
                 placeholder="Search invoices by ID or customer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
+                style={{ backgroundColor: colors.background.input }}
+                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px] bg-[#1a1c1e] border-white/10 font-mono">
+              <SelectTrigger 
+                style={{ backgroundColor: colors.background.input }}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent className="bg-[#25282c] border-white/10">
-                <SelectItem value="all" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">All Status</SelectItem>
-                <SelectItem value="paid" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Paid</SelectItem>
-                <SelectItem value="pending" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Pending</SelectItem>
-                <SelectItem value="overdue" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Overdue</SelectItem>
+              <SelectContent 
+                style={{ backgroundColor: colors.background.surface }}
+                className={colorClasses.borderInput}
+              >
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
+                <SelectItem value="paid" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Paid</SelectItem>
+                <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Pending</SelectItem>
+                <SelectItem value="overdue" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Overdue</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -188,67 +304,78 @@ export default function InvoicesPage() {
       </Card>
 
       {/* Invoices Table */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
         <CardHeader>
-          <CardTitle className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+          <CardTitle className={`font-mono text-xs ${colorClasses.textBlue} uppercase tracking-wider`}>
             ALL_INVOICES
           </CardTitle>
-          <CardDescription className="font-mono text-xs text-[#94a3b8]">
+          <CardDescription className={`font-mono text-xs ${colorClasses.textSecondary}`}>
             Total: {filteredInvoices.length} invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Invoice ID</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Customer</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Job ID</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Amount</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Date</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Due Date</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Status</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Actions</TableHead>
+              <TableRow className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Invoice ID</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Customer</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Job ID</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Amount</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Date</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Due Date</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Status</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredInvoices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={8} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     No invoices found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="font-mono text-sm font-bold text-white">
-                      {invoice.id}
+                filteredInvoices.map((invoice: Invoice) => (
+                  <TableRow key={invoice.invoiceId} className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                    <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
+                      {invoice.invoiceNumber}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-white">
-                      {invoice.customer}
+                    <TableCell className={`font-mono text-sm ${colorClasses.textPrimary}`}>
+                      {getCustomerName(invoice.customerId)}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-[#94a3b8]">
-                      {invoice.jobId}
+                    <TableCell className={`font-mono text-sm ${colorClasses.textSecondary}`}>
+                      {invoice.jobId.substring(0, 8)}...
                     </TableCell>
-                    <TableCell className="font-mono text-sm font-bold text-white">
-                      {invoice.amount}
+                    <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
+                      {formatCurrency(invoice.total)}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-[#94a3b8]">
-                      {invoice.date}
+                    <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
+                      {formatDate(invoice.issueDate)}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-[#94a3b8]">
-                      {invoice.dueDate}
+                    <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
+                      {formatDate(invoice.dueDate)}
                     </TableCell>
                     <TableCell>
                       {getStatusBadge(invoice.status)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Eye className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`h-8 w-8 p-0 ${colorClasses.iconBgBlue}`}
+                          onClick={() => handleViewInvoice(invoice)}
+                        >
+                          <Eye className={`h-4 w-4 ${colorClasses.textCyan}`} />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <Download className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`h-8 w-8 p-0 ${colorClasses.iconBgCyan}`}
+                          onClick={() => handleDownloadInvoice(invoice)}
+                          disabled={!invoice.pdfUrl}
+                        >
+                          <Download className={`h-4 w-4 ${colorClasses.textCyan}`} />
                         </Button>
                       </div>
                     </TableCell>
@@ -259,6 +386,123 @@ export default function InvoicesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Invoice Detail Modal */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent 
+          style={{ backgroundColor: colors.background.surface }}
+          className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+        >
+          <DialogHeader>
+            <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
+              INVOICE_DETAILS
+            </DialogTitle>
+            <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
+              Detailed information for {selectedInvoice?.invoiceNumber || "this invoice"}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className={`grid grid-cols-2 gap-4 text-sm font-mono ${colorClasses.textPrimary}`}>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Invoice ID</p>
+                <p className={`${colorClasses.textPrimary} break-all`}>{selectedInvoice.invoiceId}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Invoice Number</p>
+                <p className={`${colorClasses.textPrimary} break-words`}>{selectedInvoice.invoiceNumber}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Customer</p>
+                <p className={`${colorClasses.textPrimary} break-words`}>{getCustomerName(selectedInvoice.customerId)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Job ID</p>
+                <p className={`${colorClasses.textPrimary} break-words`}>{selectedInvoice.jobId}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Status</p>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(selectedInvoice.status)}
+                </div>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatCurrency(selectedInvoice.total)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Subtotal</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatCurrency(selectedInvoice.subtotal)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Tax</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatCurrency(selectedInvoice.tax)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Discount</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatCurrency(selectedInvoice.discount)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Issue Date</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatDate(selectedInvoice.issueDate)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Due Date</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatDate(selectedInvoice.dueDate)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Paid Date</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatDate(selectedInvoice.paidDate)}</p>
+              </div>
+              <div>
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Created At</p>
+                <p className={`${colorClasses.textPrimary}`}>{formatDate(selectedInvoice.createdAt)}</p>
+              </div>
+              <div className="col-span-2">
+                <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-2`}>Work Items</p>
+                {selectedInvoice.workItems.length > 0 ? (
+                  <div className={`${colorClasses.bgBase} ${colorClasses.borderDefault} rounded p-3 space-y-2 max-h-48 overflow-y-auto`}>
+                    {selectedInvoice.workItems.map((item, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-center justify-between ${colorClasses.bgSurface} p-2 rounded`}
+                      >
+                        <span className={`font-mono text-xs ${colorClasses.textPrimary} flex-1`}>
+                          {index + 1}. {item.title}
+                        </span>
+                        <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2`}>
+                          ${item.price.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`${colorClasses.bgBase} ${colorClasses.borderDefault} rounded p-3`}>
+                    <p className={`font-mono text-xs ${colorClasses.textSecondary} text-center`}>
+                      No work items
+                    </p>
+                  </div>
+                )}
+              </div>
+              {selectedInvoice.notes && (
+                <div className="col-span-2">
+                  <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Notes</p>
+                  <p className={`${colorClasses.textPrimary} break-words whitespace-pre-wrap`}>{selectedInvoice.notes}</p>
+                </div>
+              )}
+              <div className="col-span-2 flex gap-4 mt-4">
+                <Button
+                  onClick={() => handleDownloadInvoice(selectedInvoice)}
+                  disabled={!selectedInvoice.pdfUrl}
+                  className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {selectedInvoice.pdfUrl ? "DOWNLOAD PDF" : "PDF NOT AVAILABLE"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

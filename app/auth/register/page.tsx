@@ -7,8 +7,10 @@ import { useSignUp } from "@/firebase/hooks/useAuth";
 import { useCreateUser } from "@/firebase/hooks/useUser";
 import { useCreateService } from "@/firebase/hooks/useService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -278,33 +280,25 @@ export default function RegisterPage() {
               <form onSubmit={handleStep2Submit} className="space-y-6">
                 {/* Service Type */}
                 <div>
-                  <label className="block font-mono text-[0.65rem] text-[#94a3b8] mb-3 uppercase tracking-wider">
+                  <label htmlFor="serviceType" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
                     Service_Type
                   </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setServiceType("garage")}
-                      className={`p-4 border-2 transition-all duration-300 font-mono text-sm uppercase ${
-                        serviceType === "garage"
-                          ? "border-[#3b82f6] bg-[#3b82f6]/10 text-[#3b82f6]"
-                          : "border-white/10 bg-[#1a1c1e] text-[#94a3b8] hover:border-white/20"
-                      }`}
+                  <Select onValueChange={(value) => setServiceType(value as "garage" | "service")} value={serviceType}>
+                    <SelectTrigger
+                      id="serviceType"
+                      className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 [&>span]:text-left"
                     >
-                      Garage
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setServiceType("service")}
-                      className={`p-4 border-2 transition-all duration-300 font-mono text-sm uppercase ${
-                        serviceType === "service"
-                          ? "border-[#3b82f6] bg-[#3b82f6]/10 text-[#3b82f6]"
-                          : "border-white/10 bg-[#1a1c1e] text-[#94a3b8] hover:border-white/20"
-                      }`}
-                    >
-                      Service Center
-                    </button>
-                  </div>
+                      <SelectValue placeholder="Select service type..." className="placeholder:text-[#475569]" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                      <SelectItem value="garage" className="focus:bg-[#3b82f6]/50">
+                        Garage
+                      </SelectItem>
+                      <SelectItem value="service" className="focus:bg-[#3b82f6]/50">
+                        Service Center
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Service Name */}

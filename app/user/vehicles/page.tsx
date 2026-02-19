@@ -60,6 +60,7 @@ import { useGetCustomersByServiceId } from "@/firebase/hooks/useCustomer";
 import { Customer } from "@/firebase/types";
 import { useGetVehiclesByServiceId, useCreateVehicle, useUpdateVehicle, useDeleteVehicle } from "@/firebase/hooks/useVehicle";
 import { Vehicle } from "@/firebase/types";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function VehiclesPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -268,24 +269,24 @@ export default function VehiclesPage() {
     switch (type) {
       case "car":
         return (
-          <Badge className="bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30">
+          <Badge className={colorClasses.badgeInfo}>
             Car
           </Badge>
         );
       case "bike":
         return (
-          <Badge className="bg-[#22d3ee]/20 text-[#22d3ee] hover:bg-[#22d3ee]/30">
+          <Badge className={colorClasses.badgeSuccess}>
             Bike
           </Badge>
         );
       case "other":
         return (
-          <Badge className="bg-[#94a3b8]/20 text-[#94a3b8] hover:bg-[#94a3b8]/30">
+          <Badge className={colorClasses.badgeMuted}>
             Other
           </Badge>
         );
       default:
-        return <Badge className="bg-[#94a3b8]/20 text-[#94a3b8]">Unknown</Badge>;
+        return <Badge className={colorClasses.badgeMuted}>Unknown</Badge>;
     }
   };
 
@@ -314,35 +315,38 @@ export default function VehiclesPage() {
           <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
             VEHICLE_MANAGEMENT
           </h1>
-          <p className="font-mono text-sm text-[#94a3b8] uppercase tracking-wider">
+          <p className={`font-mono text-sm ${colorClasses.textSecondary} uppercase tracking-wider`}>
             {/* // */} MANAGE_VEHICLE_RECORDS_AND_DETAILS
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+            <Button className={`font-mono uppercase ${colorClasses.buttonPrimary}`}>
               <Plus className="h-4 w-4" />
               NEW VEHICLE
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#25282c] border-white/10 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent 
+            style={{ backgroundColor: colors.background.surface }}
+            className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+          >
             <DialogHeader>
-              <DialogTitle className="font-mono uppercase text-[#3b82f6]">
+              <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
                 ADD_NEW_VEHICLE
               </DialogTitle>
-              <DialogDescription className="text-[#94a3b8] font-mono text-xs">
+              <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
                 Register a new vehicle in the system
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateVehicle} className="space-y-4">
               {formError && (
-                <div className="bg-[#ef4444]/20 border border-[#ef4444]/50 p-3 rounded">
-                  <p className="font-mono text-xs text-[#ef4444]">{formError}</p>
+                <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                  <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer *
                   </label>
                   <Select
@@ -350,10 +354,16 @@ export default function VehiclesPage() {
                     onValueChange={setSelectedCustomerId}
                     required
                   >
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 text-white font-mono">
+                    <SelectTrigger
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    >
                       <SelectValue placeholder="Select customer" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
+                    <SelectContent
+                      style={{ backgroundColor: colors.background.surface }}
+                      className={colorClasses.borderInput}
+                    >
                       {customers.map((customer) => (
                         <SelectItem key={customer.customerId} value={customer.customerId} className="text-white font-mono hover:bg-white/10 focus:bg-white/10">
                           {customer.customerName || customer.customerId}
@@ -363,19 +373,20 @@ export default function VehiclesPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Number *
                   </label>
                   <Input
                     value={vehicleNumber}
                     onChange={(e) => setVehicleNumber(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="ABC-1234"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Type
                   </label>
                   <Select
@@ -393,60 +404,65 @@ export default function VehiclesPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Company
                   </label>
                   <Input
                     value={vehicleCompany}
                     onChange={(e) => setVehicleCompany(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Toyota"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Model
                   </label>
                   <Input
                     value={vehicleModel}
                     onChange={(e) => setVehicleModel(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Camry"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Year
                   </label>
                   <Input
                     type="number"
                     value={vehicleYear}
                     onChange={(e) => setVehicleYear(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="2020"
                     min="1900"
                     max={new Date().getFullYear() + 1}
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Color
                   </label>
                   <Input
                     value={vehicleColor}
                     onChange={(e) => setVehicleColor(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Red"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Name
                   </label>
                   <Input
                     value={vehicleName}
                     onChange={(e) => setVehicleName(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="My Car"
                   />
                 </div>
@@ -455,15 +471,14 @@ export default function VehiclesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsDialogOpen(false)}
-                    className="flex-1 font-mono uppercase border-white/20 bg-transparent hover:bg-white/10"
-                    style={{ color: '#ffffff' }}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
                   >
                     CANCEL
                   </Button>
                   <Button
                     type="submit"
                     disabled={createVehicleMutation.isPending}
-                    className="flex-1 font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] disabled:opacity-50"
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
                   >
                     {createVehicleMutation.isPending ? "CREATING..." : "CREATE"}
                   </Button>
@@ -486,25 +501,26 @@ export default function VehiclesPage() {
             </DialogHeader>
             <form onSubmit={handleUpdateVehicle} className="space-y-4">
               {formError && (
-                <div className="bg-[#ef4444]/20 border border-[#ef4444]/50 p-3 rounded">
-                  <p className="font-mono text-xs text-[#ef4444]">{formError}</p>
+                <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                  <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Number *
                   </label>
                   <Input
                     value={vehicleNumber}
                     onChange={(e) => setVehicleNumber(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="ABC-1234"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Type
                   </label>
                   <Select
@@ -522,60 +538,65 @@ export default function VehiclesPage() {
                   </Select>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Company
                   </label>
                   <Input
                     value={vehicleCompany}
                     onChange={(e) => setVehicleCompany(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Toyota"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Model
                   </label>
                   <Input
                     value={vehicleModel}
                     onChange={(e) => setVehicleModel(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Camry"
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Year
                   </label>
                   <Input
                     type="number"
                     value={vehicleYear}
                     onChange={(e) => setVehicleYear(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="2020"
                     min="1900"
                     max={new Date().getFullYear() + 1}
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Color
                   </label>
                   <Input
                     value={vehicleColor}
                     onChange={(e) => setVehicleColor(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="Red"
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Name
                   </label>
                   <Input
                     value={vehicleName}
                     onChange={(e) => setVehicleName(e.target.value)}
-                    className="bg-[#1a1c1e] border-white/10"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={colorClasses.borderInput}
                     placeholder="My Car"
                   />
                 </div>
@@ -605,63 +626,63 @@ export default function VehiclesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Total Vehicles
                 </p>
                 <p className="text-3xl font-bold text-white">
                   {isLoading ? "..." : vehicles.length}
                 </p>
               </div>
-              <Car className="h-8 w-8 text-[#3b82f6]" />
+              <Car className={`h-8 w-8 ${colorClasses.textBlue}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Cars
                 </p>
-                <p className="text-3xl font-bold text-[#3b82f6]">
+                <p className={`text-3xl font-bold ${colorClasses.textBlue}`}>
                   {isLoading ? "..." : carsCount}
                 </p>
               </div>
-              <Car className="h-8 w-8 text-[#3b82f6]" />
+              <Car className={`h-8 w-8 ${colorClasses.textBlue}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Bikes
                 </p>
-                <p className="text-3xl font-bold text-[#22d3ee]">
+                <p className={`text-3xl font-bold ${colorClasses.textCyan}`}>
                   {isLoading ? "..." : bikesCount}
                 </p>
               </div>
-              <Car className="h-8 w-8 text-[#22d3ee]" />
+              <Car className={`h-8 w-8 ${colorClasses.textCyan}`} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-2">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
                   Other
                 </p>
                 <p className="text-3xl font-bold text-white">
                   {isLoading ? "..." : otherCount}
                 </p>
               </div>
-              <Car className="h-8 w-8 text-[#94a3b8]" />
+              <Car className={`h-8 w-8 ${colorClasses.textMuted}`} />
             </div>
           </CardContent>
         </Card>
@@ -866,7 +887,7 @@ export default function VehiclesPage() {
               {/* Vehicle Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle ID
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -874,7 +895,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle Number
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -882,7 +903,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -890,7 +911,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Type
                   </label>
                   <div className="px-4 py-3">
@@ -898,7 +919,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Company
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -906,7 +927,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Model
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -914,7 +935,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Year
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -922,7 +943,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Color
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -931,7 +952,7 @@ export default function VehiclesPage() {
                 </div>
                 {selectedVehicle.vehicleName && (
                   <div className="col-span-2">
-                    <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                    <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                       Vehicle Name
                     </label>
                     <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -940,7 +961,7 @@ export default function VehiclesPage() {
                   </div>
                 )}
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Created At
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">
@@ -948,7 +969,7 @@ export default function VehiclesPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block font-mono text-xs text-[#94a3b8] mb-2 uppercase">
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Updated At
                   </label>
                   <div className="bg-[#1a1c1e] border border-white/10 px-4 py-3 font-mono text-sm text-white">

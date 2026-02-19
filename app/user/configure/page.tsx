@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Settings,
   Users,
   Building2,
-  Mail,
   Phone,
   MapPin,
   Save,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,44 +28,169 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { colors, colorClasses } from "@/lib/colors";
+import { AuthService } from "@/firebase/services/AuthService";
+import { useGetUser } from "@/firebase/hooks/useUser";
+import { useGetService, useUpdateService } from "@/firebase/hooks/useService";
+import { useGetUsersByServiceId } from "@/firebase/hooks/useUser";
+import { User } from "@/firebase/types";
 
 export default function ConfigurePage() {
   const [activeTab, setActiveTab] = useState("settings");
+  const [formError, setFormError] = useState("");
 
-  // Settings state
-  const [serviceName, setServiceName] = useState("");
-  const [serviceType, setServiceType] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [memberCount, setMemberCount] = useState("");
+  // Get current user
+  const currentUser = AuthService.getCurrentUser();
+  const { data: userData } = useGetUser(currentUser?.uid || "", {
+    enabled: !!currentUser?.uid,
+  });
+
+  // Get service data
+  const serviceId = userData?.serviceId || "";
+  const { data: serviceData, isLoading: isLoadingService } = useGetService(serviceId, {
+    enabled: !!serviceId,
+  });
+
+  // Get users for the service
+  const { data: serviceUsers = [], isLoading: isLoadingUsers } = useGetUsersByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
+
+  // Settings state - initialize from serviceData
+  const [serviceName, setServiceName] = useState(serviceData?.serviceName || "");
+  const [serviceType, setServiceType] = useState<"garage" | "service" | null>(serviceData?.serviceType || null);
+  const [phone, setPhone] = useState(serviceData?.phoneNumber || "");
+  const [address, setAddress] = useState(serviceData?.address || "");
+  const [memberCount, setMemberCount] = useState(serviceData?.memberCount?.toString() || "");
+
+  // Update mutation
+  const updateServiceMutation = useUpdateService();
+
+  // Update form when service data changes
+  useEffect(() => {
+    if (serviceData) {
+      setServiceName(serviceData.serviceName || "");
+      setServiceType(serviceData.serviceType);
+      setPhone(serviceData.phoneNumber || "");
+      setAddress(serviceData.address || "");
+      setMemberCount(serviceData.memberCount?.toString() || "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceData?.serviceId]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+
+    if (!serviceId) {
+      setFormError("Service ID not found.");
+      return;
+    }
+
+    try {
+      await updateServiceMutation.mutateAsync({
+        serviceId,
+        data: {
+          serviceName: serviceName || null,
+          serviceType: serviceType,
+          phoneNumber: phone || null,
+          address: address || null,
+          memberCount: memberCount ? parseInt(memberCount) : null,
+        },
+      });
+      alert("Settings saved successfully!");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setFormError(error.message || "Failed to save settings. Please try again.");
+    }
+  };
+
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return "N/A";
+    try {
+      const dateObj = date instanceof Date 
+        ? date 
+        : (date as { toDate?: () => Date; seconds?: number }).toDate?.() 
+        || new Date((date as { seconds: number }).seconds * 1000);
+      return dateObj.toLocaleDateString();
+    } catch {
+      return "N/A";
+    }
+  };
+
+  const getRoleBadge = (role: string | null) => {
+    switch (role) {
+      case "owner":
+        return (
+          <Badge className={colorClasses.badgeInfo}>
+            Owner
+          </Badge>
+        );
+      case "member":
+        return (
+          <Badge className={colorClasses.badgeMuted}>
+            Member
+          </Badge>
+        );
+      default:
+        return <Badge className={colorClasses.badgeMuted}>Unknown</Badge>;
+    }
+  };
+
+  if (isLoadingService) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className={`h-8 w-8 animate-spin ${colorClasses.textBlue}`} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
+        <h1 className={`text-4xl font-black tracking-tight ${colorClasses.textPrimary} mb-2 font-mono uppercase`}>
           CONFIGURE
         </h1>
-        <p className="font-mono text-sm text-[#94a3b8] uppercase tracking-wider">
+        <p className={`font-mono text-sm ${colorClasses.textSecondary} uppercase tracking-wider`}>
           {/* // */} MANAGE_SETTINGS_AND_USER_ACCOUNTS
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-[#1a1c1e] border border-white/10">
+        <TabsList 
+          style={{ backgroundColor: colors.background.input }}
+          className={colorClasses.borderHover}
+        >
           <TabsTrigger
             value="settings"
-            className="font-mono text-xs data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
+            className={`font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
+            style={{ 
+              backgroundColor: activeTab === 'settings' ? colors.primary.blue : 'transparent',
+              color: activeTab === 'settings' ? colors.text.primary : colors.text.secondary
+            }}
           >
             <Settings className="h-4 w-4 mr-2" />
             SETTINGS
           </TabsTrigger>
           <TabsTrigger
             value="users"
-            className="font-mono text-xs data-[state=active]:bg-[#3b82f6] data-[state=active]:text-white"
+            className={`font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
+            style={{ 
+              backgroundColor: activeTab === 'users' ? colors.primary.blue : 'transparent',
+              color: activeTab === 'users' ? colors.text.primary : colors.text.secondary
+            }}
           >
             <Users className="h-4 w-4 mr-2" />
             USERS
@@ -74,143 +199,196 @@ export default function ConfigurePage() {
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
-          <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+          <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
             <CardHeader>
-              <CardTitle className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+              <CardTitle className={`font-mono text-xs ${colorClasses.textBlue} uppercase tracking-wider`}>
                 SERVICE_INFORMATION
               </CardTitle>
-              <CardDescription className="font-mono text-xs text-[#94a3b8]">
+              <CardDescription className={`font-mono text-xs ${colorClasses.textSecondary}`}>
                 Update your service details and contact information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Service Name
-                  </Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+              <form onSubmit={handleSaveSettings}>
+                {formError && (
+                  <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded p-3 mb-4`} style={{ borderColor: `${colors.primary.red}80` }}>
+                    <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      Service Name
+                    </Label>
+                    <div className="relative">
+                      <Building2 className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colorClasses.textSecondary}`} />
+                      <Input
+                        value={serviceName}
+                        onChange={(e) => setServiceName(e.target.value)}
+                        placeholder="Enter service name"
+                        style={{ backgroundColor: colors.background.input }}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      Service Type
+                    </Label>
+                    <Select 
+                      value={serviceType || ""} 
+                      onValueChange={(value) => setServiceType(value as "garage" | "service" | null)}
+                    >
+                      <SelectTrigger 
+                        style={{ backgroundColor: colors.background.input }}
+                        className={`${colorClasses.borderInput} font-mono ${colorClasses.textPrimary}`}
+                      >
+                        <SelectValue placeholder="Select service type" />
+                      </SelectTrigger>
+                      <SelectContent 
+                        style={{ backgroundColor: colors.background.surface }}
+                        className={colorClasses.borderInput}
+                      >
+                        <SelectItem value="garage" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Garage</SelectItem>
+                        <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Service Center</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      Phone
+                    </Label>
+                    <div className="relative">
+                      <Phone className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colorClasses.textSecondary}`} />
+                      <Input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+1 (555) 000-0000"
+                        style={{ backgroundColor: colors.background.input }}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      Member Count
+                    </Label>
                     <Input
-                      value={serviceName}
-                      onChange={(e) => setServiceName(e.target.value)}
-                      placeholder="Enter service name"
-                      className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
+                      type="number"
+                      value={memberCount}
+                      onChange={(e) => setMemberCount(e.target.value)}
+                      placeholder="0"
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} font-mono text-sm`}
                     />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      Address
+                    </Label>
+                    <div className="relative">
+                      <MapPin className={`absolute left-3 top-3 h-4 w-4 ${colorClasses.textSecondary}`} />
+                      <Textarea
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Enter full address"
+                        style={{ backgroundColor: colors.background.input }}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm min-h-[80px]`}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Service Type
-                  </Label>
-                  <Select value={serviceType} onValueChange={setServiceType}>
-                    <SelectTrigger className="bg-[#1a1c1e] border-white/10 font-mono text-white">
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="garage" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Garage</SelectItem>
-                      <SelectItem value="service" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Service Center</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className={`flex justify-end gap-4 pt-4 border-t ${colorClasses.borderHover} mt-6`}>
+                  <Button
+                    type="submit"
+                    disabled={updateServiceMutation.isPending}
+                    className={`font-mono uppercase ${colorClasses.buttonPrimary}`}
+                  >
+                    {updateServiceMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        SAVE CHANGES
+                      </>
+                    )}
+                  </Button>
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Email
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="service@example.com"
-                      className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Phone
-                  </Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
-                    <Input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Address
-                  </Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-[#94a3b8]" />
-                    <Textarea
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter full address"
-                      className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm min-h-[80px]"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-mono text-xs text-[#94a3b8] uppercase">
-                    Member Count
-                  </Label>
-                  <Input
-                    type="number"
-                    value={memberCount}
-                    onChange={(e) => setMemberCount(e.target.value)}
-                    placeholder="0"
-                    className="bg-[#1a1c1e] border-white/10 font-mono text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-4 pt-4 border-t border-white/10">
-                <Button
-                  variant="outline"
-                  className="font-mono uppercase border-white/20 bg-transparent hover:bg-white/10"
-                  style={{ color: '#ffffff' }}
-                >
-                  CANCEL
-                </Button>
-                <Button className="font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]">
-                  <Save className="h-4 w-4 mr-2" />
-                  SAVE CHANGES
-                </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6">
-          <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+          <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
             <CardHeader>
-              <CardTitle className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+              <CardTitle className={`font-mono text-xs ${colorClasses.textBlue} uppercase tracking-wider`}>
                 USER_MANAGEMENT
               </CardTitle>
-              <CardDescription className="font-mono text-xs text-[#94a3b8]">
-                Manage user accounts and permissions
+              <CardDescription className={`font-mono text-xs ${colorClasses.textSecondary}`}>
+                Manage user accounts and permissions ({serviceUsers.length} users)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-[#94a3b8] mx-auto mb-4" />
-                <p className="font-mono text-sm text-[#94a3b8]">
-                  User management feature coming soon
-                </p>
-              </div>
+              {isLoadingUsers ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className={`h-8 w-8 animate-spin ${colorClasses.textBlue}`} />
+                </div>
+              ) : serviceUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className={`h-12 w-12 ${colorClasses.textSecondary} mx-auto mb-4`} />
+                  <p className={`font-mono text-sm ${colorClasses.textSecondary}`}>
+                    No users found for this service
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>User ID</TableHead>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Name</TableHead>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Email</TableHead>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Role</TableHead>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Owner Name</TableHead>
+                      <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Created At</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {serviceUsers.map((user: User) => (
+                      <TableRow key={user.uid} className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                        <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
+                          {user.uid.substring(0, 8)}...
+                        </TableCell>
+                        <TableCell className={`font-mono text-sm ${colorClasses.textPrimary}`}>
+                          {user.displayName || "N/A"}
+                        </TableCell>
+                        <TableCell className={`font-mono text-sm ${colorClasses.textSecondary}`}>
+                          {user.email || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          {getRoleBadge(user.userRole)}
+                        </TableCell>
+                        <TableCell className={`font-mono text-sm ${colorClasses.textSecondary}`}>
+                          {user.ownerName || "N/A"}
+                        </TableCell>
+                        <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
+                          {formatDate(user.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

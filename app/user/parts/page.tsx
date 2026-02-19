@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { colors, colorClasses } from "@/lib/colors";
 
 export default function PartsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,13 +60,13 @@ export default function PartsPage() {
     switch (status) {
       case "In Stock":
         return (
-          <Badge className="bg-[#22d3ee]/20 text-[#22d3ee] hover:bg-[#22d3ee]/30">
+          <Badge className={colorClasses.badgeSuccess}>
             In Stock
           </Badge>
         );
       case "Low Stock":
         return (
-          <Badge className="bg-[#ef4444]/20 text-[#ef4444] hover:bg-[#ef4444]/30">
+          <Badge className={colorClasses.badgeError}>
             Low Stock
           </Badge>
         );
@@ -79,14 +80,14 @@ export default function PartsPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-white mb-2 font-mono uppercase">
+          <h1 className={`text-4xl font-black tracking-tight ${colorClasses.textPrimary} mb-2 font-mono uppercase`}>
             PARTS_MANAGEMENT
           </h1>
-          <p className="font-mono text-sm text-[#94a3b8] uppercase tracking-wider">
+          <p className={`font-mono text-sm ${colorClasses.textSecondary} uppercase tracking-wider`}>
             {/* // */} MANAGE_VEHICLE_PARTS_AND_COMPONENTS
           </p>
         </div>
-        <Button className="font-mono uppercase [clip-path:polygon(0_0,90%_0,100%_30%,100%_100%,10%_100%,0_70%)] bg-[#e2e8f0] text-[#0f172a] hover:bg-[#22d3ee] hover:shadow-[0_0_30px_rgba(34,211,238,0.4)]">
+        <Button className={`font-mono uppercase ${colorClasses.buttonPrimary}`}>
           <Plus className="h-4 w-4" />
           ADD PART
         </Button>
@@ -94,56 +95,56 @@ export default function PartsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Total Parts</p>
-                <p className="text-2xl font-bold text-white">{parts.length}</p>
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total Parts</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>{parts.length}</p>
               </div>
-              <div className="w-12 h-12 bg-[#3b82f6]/20 rounded flex items-center justify-center">
-                <Boxes className="h-6 w-6 text-[#3b82f6]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgBlue} rounded flex items-center justify-center`}>
+                <Boxes className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Low Stock</p>
-                <p className="text-2xl font-bold text-white">
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Low Stock</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>
                   {parts.filter((part) => part.status === "Low Stock").length}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-[#ef4444]/20 rounded flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-[#ef4444]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgRed} rounded flex items-center justify-center`}>
+                <AlertTriangle className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Total Value</p>
-                <p className="text-2xl font-bold text-white">$8,450</p>
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total Value</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>$8,450</p>
               </div>
-              <div className="w-12 h-12 bg-[#22d3ee]/20 rounded flex items-center justify-center">
-                <Boxes className="h-6 w-6 text-[#22d3ee]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgCyan} rounded flex items-center justify-center`}>
+                <Boxes className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5">
+        <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault}`}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-mono text-xs text-[#94a3b8] uppercase mb-1">Suppliers</p>
-                <p className="text-2xl font-bold text-white">5</p>
+                <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Suppliers</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>5</p>
               </div>
-              <div className="w-12 h-12 bg-[#3b82f6]/20 rounded flex items-center justify-center">
-                <Boxes className="h-6 w-6 text-[#3b82f6]" />
+              <div className={`w-12 h-12 ${colorClasses.iconBgBlue} rounded flex items-center justify-center`}>
+                <Boxes className="h-6 w-6" />
               </div>
             </div>
           </CardContent>
@@ -151,27 +152,34 @@ export default function PartsPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#94a3b8]" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${colorClasses.textSecondary}`} />
               <Input
                 placeholder="Search parts by ID or name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
+                style={{ backgroundColor: colors.background.input }}
+                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px] bg-[#1a1c1e] border-white/10 font-mono">
+              <SelectTrigger 
+                style={{ backgroundColor: colors.background.input }}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+              >
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
-              <SelectContent className="bg-[#25282c] border-white/10">
-                <SelectItem value="all" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">All Status</SelectItem>
-                <SelectItem value="in stock" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">In Stock</SelectItem>
-                <SelectItem value="low stock" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Low Stock</SelectItem>
+              <SelectContent 
+                style={{ backgroundColor: colors.background.surface }}
+                className={colorClasses.borderInput}
+              >
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
+                <SelectItem value="in stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>In Stock</SelectItem>
+                <SelectItem value="low stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Low Stock</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -179,54 +187,54 @@ export default function PartsPage() {
       </Card>
 
       {/* Parts Table */}
-      <Card className="bg-gradient-to-br from-[#2a2e33] to-[#16181b] border-white/5 shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]">
+      <Card className={`${colorClasses.cardGradient} ${colorClasses.borderDefault} shadow-[inset_1px_1px_0_rgba(255,255,255,0.05),20px_20px_60px_#0d0e10]`}>
         <CardHeader>
-          <CardTitle className="font-mono text-xs text-[#3b82f6] uppercase tracking-wider">
+          <CardTitle className={`font-mono text-xs ${colorClasses.textBlue} uppercase tracking-wider`}>
             ALL_PARTS
           </CardTitle>
-          <CardDescription className="font-mono text-xs text-[#94a3b8]">
+          <CardDescription className={`font-mono text-xs ${colorClasses.textSecondary}`}>
             Total: {filteredParts.length} parts
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-white/5">
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Part ID</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Name</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Vehicle Type</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Stock</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Price</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Supplier</TableHead>
-                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">Status</TableHead>
+              <TableRow className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Part ID</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Name</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Vehicle Type</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Stock</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Price</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Supplier</TableHead>
+                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredParts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={7} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     No parts found
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredParts.map((part) => (
-                  <TableRow key={part.id} className="border-white/10 hover:bg-white/5">
-                    <TableCell className="font-mono text-sm font-bold text-white">
+                  <TableRow key={part.id} className={`${colorClasses.borderHover} hover:bg-white/5`}>
+                    <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
                       {part.id}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-white">
+                    <TableCell className={`font-mono text-sm ${colorClasses.textPrimary}`}>
                       {part.name}
                     </TableCell>
-                    <TableCell className="font-mono text-sm text-[#94a3b8]">
+                    <TableCell className={`font-mono text-sm ${colorClasses.textSecondary}`}>
                       {part.vehicleType}
                     </TableCell>
-                    <TableCell className="font-mono text-sm font-bold text-white">
+                    <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
                       {part.stock}
                     </TableCell>
-                    <TableCell className="font-mono text-sm font-bold text-white">
+                    <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
                       {part.price}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-[#94a3b8]">
+                    <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
                       {part.supplier}
                     </TableCell>
                     <TableCell>
