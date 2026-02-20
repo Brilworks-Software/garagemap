@@ -82,7 +82,8 @@ export default function ConfigurePage() {
   useEffect(() => {
     if (serviceData) {
       setServiceName(serviceData.serviceName || "");
-      setServiceType(serviceData?.serviceType?.toLowerCase() || "");
+      const type = serviceData?.serviceType?.toLowerCase();
+      setServiceType(type === "garage" || type === "service" ? type : null);
       setPhone(serviceData.phoneNumber || "");
       setAddress(serviceData.address || "");
       setMemberCount(serviceData.memberCount?.toString() || "");

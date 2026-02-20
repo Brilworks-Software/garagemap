@@ -33,6 +33,7 @@ export const colors = {
     primary: "#ffffff",
     secondary: "#94a3b8",
     muted: "#94a3b8",
+    buttonPrimary: "#ffffff",
     button: {
       light: "#e2e8f0",
       dark: "#0f172a",
@@ -169,5 +170,7 @@ export const colorClasses = {
   // Background classes
   bgBase: "bg-[#1a1c1e]",
   bgSurface: "bg-[#25282c]",
+  bgBlueAlpha20: "bg-[#3b82f6]/20",
+  bgRedAlpha20: "bg-[#ef4444]/20",
   textMuted: "text-[#94a3b8]",
 } as const;

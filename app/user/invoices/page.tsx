@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Plus,
@@ -52,7 +52,7 @@ import { Invoice } from "@/firebase/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdFilter = searchParams.get("jobId");
@@ -504,5 +504,17 @@ export default function InvoicesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className={`h-8 w-8 animate-spin ${colorClasses.textBlue}`} />
+      </div>
+    }>
+      <InvoicesContent />
+    </Suspense>
   );
 }

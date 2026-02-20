@@ -43,10 +43,10 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   };
 
   // Colors
-  const primaryColor = [59, 130, 246]; // Blue
-  const darkColor = [15, 23, 42]; // Dark blue
-  const lightGray = [241, 245, 249];
-  const borderGray = [226, 232, 240];
+  const primaryColor: [number, number, number] = [59, 130, 246]; // Blue
+  const darkColor: [number, number, number] = [15, 23, 42]; // Dark blue
+  const lightGray: [number, number, number] = [241, 245, 249];
+  const borderGray: [number, number, number] = [226, 232, 240];
 
   // Header Section
   doc.setFillColor(...primaryColor);
