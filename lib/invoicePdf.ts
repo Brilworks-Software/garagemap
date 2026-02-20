@@ -19,6 +19,9 @@ interface InvoiceData {
   servicePhone: string | null;
   serviceAddress: string | null;
   notes: string | null;
+  // Optional GST flags
+  isGST?: boolean;
+  gstNumber?: string | null;
 }
 
 export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
@@ -112,6 +115,10 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
     doc.text(`Phone: ${data.customerPhone}`, customerX, yPos);
     yPos += 5;
   }
+  if (data.isGST && data.gstNumber) {
+    doc.text(`GSTIN: ${data.gstNumber}`, customerX, yPos);
+    yPos += 5;
+  }
 
   // Vehicle Information
   yPos += 5;
@@ -171,10 +178,11 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   doc.text(`$${data.subtotal.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
   yPos += 8;
 
-  // Tax
+  // Tax/GST
   if (data.tax && data.tax > 0) {
-    doc.text('Tax:', totalsX, yPos, { align: 'right' });
-    doc.text(`$${data.tax.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+    const taxLabel = data.isGST ? 'GST:' : 'Tax:';
+    doc.text(taxLabel, totalsX, yPos, { align: 'right' });
+    doc.text(`${data.tax.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 8;
   }
 

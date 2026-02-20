@@ -169,33 +169,36 @@ export default function ConfigurePage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList 
-          style={{ backgroundColor: colors.background.input }}
-          className={colorClasses.borderHover}
-        >
-          <TabsTrigger
-            value="settings"
-            className={`font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
-            style={{ 
-              backgroundColor: activeTab === 'settings' ? colors.primary.blue : 'transparent',
-              color: activeTab === 'settings' ? colors.text.primary : colors.text.secondary
-            }}
+        <div className="flex gap-6">
+          <TabsList 
+            style={{ backgroundColor: colors.background.input }}
+            className={`flex-col h-auto w-48 items-stretch ${colorClasses.borderHover}`}
           >
-            <Settings className="h-4 w-4 mr-2" />
-            SETTINGS
-          </TabsTrigger>
-          <TabsTrigger
-            value="users"
-            className={`font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
-            style={{ 
-              backgroundColor: activeTab === 'users' ? colors.primary.blue : 'transparent',
-              color: activeTab === 'users' ? colors.text.primary : colors.text.secondary
-            }}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            USERS
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger
+              value="settings"
+              className={`w-full justify-start font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
+              style={{ 
+                backgroundColor: activeTab === 'settings' ? colors.primary.blue : 'transparent',
+                color: activeTab === 'settings' ? colors.text.primary : colors.text.secondary
+              }}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              SETTINGS
+            </TabsTrigger>
+            <TabsTrigger
+              value="users"
+              className={`w-full justify-start font-mono text-xs data-[state=active]:${colorClasses.textPrimary}`}
+              style={{ 
+                backgroundColor: activeTab === 'users' ? colors.primary.blue : 'transparent',
+                color: activeTab === 'users' ? colors.text.primary : colors.text.secondary
+              }}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              USERS
+            </TabsTrigger>
+          </TabsList>
+          
+          <div className="flex-1">
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
@@ -392,6 +395,8 @@ export default function ConfigurePage() {
             </CardContent>
           </Card>
         </TabsContent>
+          </div>
+        </div>
       </Tabs>
     </div>
   );

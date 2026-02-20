@@ -92,16 +92,15 @@ export default function UserLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto flex-col">
           {navItems.map((item) => {
             const active = isActive(item.href);
-
             return (
               <div key={item.href}>
-                <div className="flex items-center">
+                <div className="flex">
                   <Link
                     href={item.href}
-                    className={`flex-1 flex items-center gap-3 px-4 py-3 font-mono text-sm uppercase tracking-wider transition-all duration-300 relative group ${
+                    className={`flex-1 flex gap-3 px-4 py-3 font-mono text-sm uppercase tracking-wider transition-all duration-300 relative group ${
                       active
                         ? `${colorClasses.badgeInfo.replace('bg-', 'bg-').replace('/20', '/20')} ${colorClasses.textBlue} border-l-2`
                         : `${colorClasses.textSecondary} ${colorClasses.textCyan.replace('text-', 'hover:text-')} hover:bg-white/5`
@@ -109,7 +108,7 @@ export default function UserLayout({
                     style={active ? { borderColor: colors.primary.blue } : {}}
                   >
                     <item.icon size={18} />
-                    {sidebarOpen && <span className="flex-1">{item.name}</span>}
+                    {sidebarOpen && <span className="">{item.name}</span>}
                     {!sidebarOpen && (
                       <div style={{ backgroundColor: colors.background.surface }} className={`${colorClasses.borderInput} text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 absolute left-full ml-2 px-3 py-2 border`}>
                         {item.name}
