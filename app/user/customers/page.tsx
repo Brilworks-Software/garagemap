@@ -59,6 +59,7 @@ import { AuthService } from "@/firebase/services/AuthService";
 import { useGetUser } from "@/firebase/hooks/useUser";
 import { useGetCustomersByServiceId, useCreateCustomer, useUpdateCustomer, useDeleteCustomer } from "@/firebase/hooks/useCustomer";
 import { useGetVehiclesByServiceId } from "@/firebase/hooks/useVehicle";
+import { useGetJobsByServiceId } from "@/firebase/hooks/useJob";
 import { Customer } from "@/firebase/types";
 import { colors, colorClasses } from "@/lib/colors";
 
@@ -99,6 +100,11 @@ export default function CustomersPage() {
     enabled: !!serviceId,
   });
 
+  // Get jobs for the service to count jobs per customer
+  const { data: jobs = [] } = useGetJobsByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
+
   // Mutations
   const createCustomerMutation = useCreateCustomer();
   const updateCustomerMutation = useUpdateCustomer();
@@ -107,6 +113,10 @@ export default function CustomersPage() {
   // Function to get vehicle count for a customer
   const getVehicleCount = (customerId: string) => {
     return vehicles.filter((vehicle) => vehicle.customerId === customerId).length;
+  };
+
+  const getJobCount = (customerId: string) => {
+    return jobs.filter((job) => job.customerId === customerId).length;
   };
 
   // Reset form when dialog closes
@@ -402,9 +412,9 @@ export default function CustomersPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
-                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
-                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Blocked</SelectItem>
+                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono `}>Active</SelectItem>
+                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono `}>Inactive</SelectItem>
+                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono `}>Blocked</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -426,8 +436,8 @@ export default function CustomersPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="individual" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Individual</SelectItem>
-                      <SelectItem value="company" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Company</SelectItem>
+                      <SelectItem value="individual" className={`${colorClasses.textPrimary} font-mono`}>Individual</SelectItem>
+                      <SelectItem value="company" className={`${colorClasses.textPrimary} font-mono `}>Company</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -449,10 +459,10 @@ export default function CustomersPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="not-specified" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Not specified</SelectItem>
-                      <SelectItem value="male" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Male</SelectItem>
-                      <SelectItem value="female" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Female</SelectItem>
-                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
+                      <SelectItem value="not-specified" className={`${colorClasses.textPrimary} font-mono`}>Not specified</SelectItem>
+                      <SelectItem value="male" className={`${colorClasses.textPrimary} font-mono`}>Male</SelectItem>
+                      <SelectItem value="female" className={`${colorClasses.textPrimary} font-mono `}>Female</SelectItem>
+                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono `}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -496,9 +506,9 @@ export default function CustomersPage() {
                 <div className="col-span-2 flex gap-4">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => setIsDialogOpen(false)}
-                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
                   >
                     CANCEL
                   </Button>
@@ -593,9 +603,9 @@ export default function CustomersPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
-                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
-                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Blocked</SelectItem>
+                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono`}>Active</SelectItem>
+                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono`}>Inactive</SelectItem>
+                      <SelectItem value="blocked" className={`${colorClasses.textPrimary} font-mono`}>Blocked</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -689,7 +699,7 @@ export default function CustomersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsEditDialogOpen(false)}
-                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textPrimary}`}
                   >
                     CANCEL
                   </Button>
@@ -837,9 +847,6 @@ export default function CustomersPage() {
                   Total Jobs
                 </TableHead>
                 <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
-                  Total Spent
-                </TableHead>
-                <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
                   Last Visit
                 </TableHead>
                 <TableHead className={`font-mono text-xs uppercase ${colorClasses.textSecondary}`}>
@@ -853,19 +860,19 @@ export default function CustomersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
+                  <TableCell colSpan={8} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     Loading customers...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textRed} font-mono`}>
+                  <TableCell colSpan={8} className={`text-center py-8 ${colorClasses.textRed} font-mono`}>
                     Error loading customers. Please try again.
                   </TableCell>
                 </TableRow>
               ) : filteredCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
+                  <TableCell colSpan={8} className={`text-center py-8 ${colorClasses.textSecondary} font-mono`}>
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -910,10 +917,7 @@ export default function CustomersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-sm text-white">
-                      -
-                    </TableCell>
-                    <TableCell className="font-mono text-sm font-bold text-white">
-                      -
+                      {getJobCount(customer.customerId)}
                     </TableCell>
                     <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
                       {customer.createdAt 

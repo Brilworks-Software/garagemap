@@ -595,10 +595,10 @@ export default function JobsPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Service</SelectItem>
-                      <SelectItem value="repair" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Repair</SelectItem>
-                      <SelectItem value="maintenance" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Maintenance</SelectItem>
-                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
+                      <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono `}>Service</SelectItem>
+                      <SelectItem value="repair" className={`${colorClasses.textPrimary} font-mono `}>Repair</SelectItem>
+                      <SelectItem value="maintenance" className={`${colorClasses.textPrimary} font-mono `}>Maintenance</SelectItem>
+                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono `}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -621,7 +621,7 @@ export default function JobsPage() {
                       className={colorClasses.borderInput}
                     >
                       {customers.map((customer) => (
-                        <SelectItem key={customer.customerId} value={customer.customerId} className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>
+                        <SelectItem key={customer.customerId} value={customer.customerId} className={`${colorClasses.textPrimary} font-mono`}>
                           {customer.customerName || "Unnamed Customer"}
                         </SelectItem>
                       ))}
@@ -654,7 +654,7 @@ export default function JobsPage() {
                           vehicle.vehicleYear?.toString(),
                         ].filter(Boolean).join(" ") || vehicle.vehicleNumber || "Unknown Vehicle";
                         return (
-                          <SelectItem key={vehicle.vehicleId} value={vehicle.vehicleId} className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>
+                          <SelectItem key={vehicle.vehicleId} value={vehicle.vehicleId} className={`${colorClasses.textPrimary} font-mono`}>
                             {vehicleInfo}
                           </SelectItem>
                         );
@@ -680,10 +680,10 @@ export default function JobsPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Pending</SelectItem>
-                      <SelectItem value="in-progress" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>In Progress</SelectItem>
-                      <SelectItem value="completed" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Completed</SelectItem>
-                      <SelectItem value="cancelled" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Cancelled</SelectItem>
+                      <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono`}>Pending</SelectItem>
+                      <SelectItem value="in-progress" className={`${colorClasses.textPrimary} font-mono `}>In Progress</SelectItem>
+                      <SelectItem value="completed" className={`${colorClasses.textPrimary} font-mono `}>Completed</SelectItem>
+                      <SelectItem value="cancelled" className={`${colorClasses.textPrimary} font-mono`}>Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1153,26 +1153,26 @@ export default function JobsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ backgroundColor: colors.background.input }}
-                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger 
                 style={{ backgroundColor: colors.background.input }}
-                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono text-white`}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Filter by status" className="text-white"/>
               </SelectTrigger>
               <SelectContent 
                 style={{ backgroundColor: colors.background.surface }}
                 className={colorClasses.borderInput}
               >
-                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
-                <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Pending</SelectItem>
-                <SelectItem value="in-progress" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>In Progress</SelectItem>
-                <SelectItem value="completed" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Completed</SelectItem>
-                <SelectItem value="cancelled" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Cancelled</SelectItem>
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono `}>All Status</SelectItem>
+                <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono `}>Pending</SelectItem>
+                <SelectItem value="in-progress" className={`${colorClasses.textPrimary} font-mono `}>In Progress</SelectItem>
+                <SelectItem value="completed" className={`${colorClasses.textPrimary} font-mono `}>Completed</SelectItem>
+                <SelectItem value="cancelled" className={`${colorClasses.textPrimary} font-mono `}>Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1490,7 +1490,12 @@ export default function JobsPage() {
                       
                       // Calculate totals
                       const subtotal = workItems.reduce((sum, item) => sum + item.price, 0);
-                      const tax = 0; // Can be configured later
+                      
+                      // Check if customer is company type and add GST
+                      const isCompany = customer.customerType === "company";
+                      const gstRate = 0.18; // 18% GST
+                      const tax = isCompany ? subtotal * gstRate : 0;
+                      
                       const discount = 0; // Can be configured later
                       const total = subtotal + tax - discount;
                       
@@ -1539,6 +1544,8 @@ export default function JobsPage() {
                         servicePhone: serviceData?.phoneNumber || null,
                         serviceAddress: serviceData?.address || null,
                         notes: selectedJob.jobNotes || null,
+                        isGST: isCompany,
+                        gstNumber: customer.customerGSTNumber || null,
                       };
                       
                       const pdfBlob = generateInvoicePDFBlob(pdfData);

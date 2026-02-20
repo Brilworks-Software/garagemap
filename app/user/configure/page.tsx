@@ -66,6 +66,8 @@ export default function ConfigurePage() {
     enabled: !!serviceId,
   });
 
+  console.log("Service type",serviceData?.serviceType);
+
   // Settings state - initialize from serviceData
   const [serviceName, setServiceName] = useState(serviceData?.serviceName || "");
   const [serviceType, setServiceType] = useState<"garage" | "service" | null>(serviceData?.serviceType || null);
@@ -80,7 +82,7 @@ export default function ConfigurePage() {
   useEffect(() => {
     if (serviceData) {
       setServiceName(serviceData.serviceName || "");
-      setServiceType(serviceData.serviceType);
+      setServiceType(serviceData?.serviceType?.toLowerCase() || "");
       setPhone(serviceData.phoneNumber || "");
       setAddress(serviceData.address || "");
       setMemberCount(serviceData.memberCount?.toString() || "");
@@ -169,10 +171,11 @@ export default function ConfigurePage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex gap-6">
+        <div className="flex gap-6 flex-col">
+
           <TabsList 
             style={{ backgroundColor: colors.background.input }}
-            className={`flex-col h-auto w-48 items-stretch ${colorClasses.borderHover}`}
+            className={`flex h-auto w-48 items-stretch ${colorClasses.borderHover}`}
           >
             <TabsTrigger
               value="settings"
@@ -230,7 +233,7 @@ export default function ConfigurePage() {
                         onChange={(e) => setServiceName(e.target.value)}
                         placeholder="Enter service name"
                         style={{ backgroundColor: colors.background.input }}
-                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
                       />
                     </div>
                   </div>
@@ -253,8 +256,8 @@ export default function ConfigurePage() {
                         style={{ backgroundColor: colors.background.surface }}
                         className={colorClasses.borderInput}
                       >
-                        <SelectItem value="garage" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Garage</SelectItem>
-                        <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Service Center</SelectItem>
+                        <SelectItem value="garage" className={`${colorClasses.textPrimary} font-mono `}>Garage</SelectItem>
+                        <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono `}>Service Center</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -271,7 +274,7 @@ export default function ConfigurePage() {
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+1 (555) 000-0000"
                         style={{ backgroundColor: colors.background.input }}
-                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
                       />
                     </div>
                   </div>
@@ -286,7 +289,7 @@ export default function ConfigurePage() {
                       onChange={(e) => setMemberCount(e.target.value)}
                       placeholder="0"
                       style={{ backgroundColor: colors.background.input }}
-                      className={`${colorClasses.borderInput} font-mono text-sm`}
+                      className={`${colorClasses.borderInput} font-mono text-sm text-white`}
                     />
                   </div>
 
@@ -301,7 +304,7 @@ export default function ConfigurePage() {
                         onChange={(e) => setAddress(e.target.value)}
                         placeholder="Enter full address"
                         style={{ backgroundColor: colors.background.input }}
-                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm min-h-[80px]`}
+                        className={`pl-10 ${colorClasses.borderInput} font-mono text-sm min-h-[80px] text-white`}
                       />
                     </div>
                   </div>

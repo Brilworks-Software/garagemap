@@ -158,10 +158,10 @@ export default function UserLayout({
             {/* // */} WORKSHOP_CONTROL_PANEL
           </div>
           <div className="flex items-center gap-4">
-            <div className={`font-mono text-[10px] ${colorClasses.textCyan}`}>
+            {/* <div className={`font-mono text-[10px] ${colorClasses.textCyan}`}>
               SYS_STATUS: ACTIVE<br />
               LATENCY: 12ms
-            </div>
+            </div> */}
           </div>
         </header>
 

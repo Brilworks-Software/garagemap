@@ -439,13 +439,13 @@ export default function InventoryPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>None</SelectItem>
-                      <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Parts</SelectItem>
-                      <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Fluids</SelectItem>
-                      <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Filters</SelectItem>
-                      <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Tools</SelectItem>
-                      <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Consumables</SelectItem>
-                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
+                      <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono `}>None</SelectItem>
+                      <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono `}>Parts</SelectItem>
+                      <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono `}>Fluids</SelectItem>
+                      <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono `}>Filters</SelectItem>
+                      <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono `}>Tools</SelectItem>
+                      <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono `}>Consumables</SelectItem>
+                      <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono `}>Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -579,10 +579,10 @@ export default function InventoryPage() {
                       style={{ backgroundColor: colors.background.surface }}
                       className={colorClasses.borderInput}
                     >
-                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
-                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
-                      <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Out of Stock</SelectItem>
-                      <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Low Stock</SelectItem>
+                      <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono `}>Active</SelectItem>
+                      <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono `}>Inactive</SelectItem>
+                      <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono `}>Out of Stock</SelectItem>
+                      <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono `}>Low Stock</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -614,9 +614,9 @@ export default function InventoryPage() {
               <div className="flex gap-4">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => setIsDialogOpen(false)}
-                  className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textPrimary}`}
+                  className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
                 >
                   CANCEL
                 </Button>
@@ -712,47 +712,47 @@ export default function InventoryPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ backgroundColor: colors.background.input }}
-                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger 
                 style={{ backgroundColor: colors.background.input }}
-                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono text-white`}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by category" />
+                <SelectValue placeholder="Filter by category" className="text-white" />
               </SelectTrigger>
               <SelectContent 
                 style={{ backgroundColor: colors.background.surface }}
                 className={colorClasses.borderInput}
               >
-                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Categories</SelectItem>
-                <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Parts</SelectItem>
-                <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Fluids</SelectItem>
-                <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Filters</SelectItem>
-                <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Tools</SelectItem>
-                <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Consumables</SelectItem>
-                <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono `}>All Categories</SelectItem>
+                <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono `}>Parts</SelectItem>
+                <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono `}>Fluids</SelectItem>
+                <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono `}>Filters</SelectItem>
+                <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono `}>Tools</SelectItem>
+                <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono `}>Consumables</SelectItem>
+                <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono `}>Other</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger 
                 style={{ backgroundColor: colors.background.input }}
-                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono text-white`}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Filter by status"  />
               </SelectTrigger>
               <SelectContent 
                 style={{ backgroundColor: colors.background.surface }}
                 className={colorClasses.borderInput}
               >
-                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
-                <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
-                <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
-                <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Out of Stock</SelectItem>
-                <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Low Stock</SelectItem>
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono `}>All Status</SelectItem>
+                <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono `}>Active</SelectItem>
+                <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono `}>Inactive</SelectItem>
+                <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono `}>Out of Stock</SelectItem>
+                <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono `}>Low Stock</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -932,13 +932,13 @@ export default function InventoryPage() {
                     style={{ backgroundColor: colors.background.surface }}
                     className={colorClasses.borderInput}
                   >
-                    <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>None</SelectItem>
-                    <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Parts</SelectItem>
-                    <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Fluids</SelectItem>
-                    <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Filters</SelectItem>
-                    <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Tools</SelectItem>
-                    <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Consumables</SelectItem>
-                    <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Other</SelectItem>
+                    <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono `}>None</SelectItem>
+                    <SelectItem value="parts" className={`${colorClasses.textPrimary} font-mono `}>Parts</SelectItem>
+                    <SelectItem value="fluids" className={`${colorClasses.textPrimary} font-mono `}>Fluids</SelectItem>
+                    <SelectItem value="filters" className={`${colorClasses.textPrimary} font-mono `}>Filters</SelectItem>
+                    <SelectItem value="tools" className={`${colorClasses.textPrimary} font-mono `}>Tools</SelectItem>
+                    <SelectItem value="consumables" className={`${colorClasses.textPrimary} font-mono `}>Consumables</SelectItem>
+                    <SelectItem value="other" className={`${colorClasses.textPrimary} font-mono `}>Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1064,10 +1064,10 @@ export default function InventoryPage() {
                     style={{ backgroundColor: colors.background.surface }}
                     className={colorClasses.borderInput}
                   >
-                    <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Active</SelectItem>
-                    <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Inactive</SelectItem>
-                    <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Out of Stock</SelectItem>
-                    <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Low Stock</SelectItem>
+                    <SelectItem value="active" className={`${colorClasses.textPrimary} font-mono `}>Active</SelectItem>
+                    <SelectItem value="inactive" className={`${colorClasses.textPrimary} font-mono `}>Inactive</SelectItem>
+                    <SelectItem value="out-of-stock" className={`${colorClasses.textPrimary} font-mono `}>Out of Stock</SelectItem>
+                    <SelectItem value="low-stock" className={`${colorClasses.textPrimary} font-mono `}>Low Stock</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1097,9 +1097,9 @@ export default function InventoryPage() {
             <div className="flex gap-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => setIsEditDialogOpen(false)}
-                className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textPrimary}`}
+                className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
               >
                 CANCEL
               </Button>
@@ -1262,13 +1262,13 @@ export default function InventoryPage() {
             <div className="flex gap-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   setIsQuantityAdjustModalOpen(false);
                   setQuantityAdjustment("");
                   setSelectedItem(null);
                 }}
-                className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textPrimary}`}
+                className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
               >
                 CANCEL
               </Button>

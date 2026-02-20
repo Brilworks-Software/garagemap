@@ -278,13 +278,13 @@ export default function InvoicesPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ backgroundColor: colors.background.input }}
-                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm`}
+                className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger 
                 style={{ backgroundColor: colors.background.input }}
-                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono`}
+                className={`w-full md:w-[200px] ${colorClasses.borderInput} font-mono text-white`}
               >
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filter by status" />
@@ -293,10 +293,10 @@ export default function InvoicesPage() {
                 style={{ backgroundColor: colors.background.surface }}
                 className={colorClasses.borderInput}
               >
-                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>All Status</SelectItem>
-                <SelectItem value="paid" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Paid</SelectItem>
-                <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Pending</SelectItem>
-                <SelectItem value="overdue" className={`${colorClasses.textPrimary} font-mono hover:bg-white/10 focus:bg-white/10`}>Overdue</SelectItem>
+                <SelectItem value="all" className={`${colorClasses.textPrimary} font-mono `}>All Status</SelectItem>
+                <SelectItem value="paid" className={`${colorClasses.textPrimary} font-mono `}>Paid</SelectItem>
+                <SelectItem value="pending" className={`${colorClasses.textPrimary} font-mono `}>Pending</SelectItem>
+                <SelectItem value="overdue" className={`${colorClasses.textPrimary} font-mono `}>Overdue</SelectItem>
               </SelectContent>
             </Select>
           </div>

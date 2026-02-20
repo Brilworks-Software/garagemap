@@ -365,7 +365,7 @@ export default function VehiclesPage() {
                       className={colorClasses.borderInput}
                     >
                       {customers.map((customer) => (
-                        <SelectItem key={customer.customerId} value={customer.customerId} className="text-white font-mono hover:bg-white/10 focus:bg-white/10">
+                        <SelectItem key={customer.customerId} value={customer.customerId} className="text-white font-mono ">
                           {customer.customerName || customer.customerId}
                         </SelectItem>
                       ))}
@@ -397,9 +397,9 @@ export default function VehiclesPage() {
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#25282c] border-white/10">
-                      <SelectItem value="car" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Car</SelectItem>
-                      <SelectItem value="bike" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Bike</SelectItem>
-                      <SelectItem value="other" className="text-white font-mono hover:bg-white/10 focus:bg-white/10">Other</SelectItem>
+                      <SelectItem value="car" className="text-white font-mono ">Car</SelectItem>
+                      <SelectItem value="bike" className="text-white font-mono ">Bike</SelectItem>
+                      <SelectItem value="other" className="text-white font-mono ">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -469,9 +469,9 @@ export default function VehiclesPage() {
                 <div className="col-span-2 flex gap-4">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => setIsDialogOpen(false)}
-                    className={`flex-1 font-mono uppercase ${colorClasses.buttonOutline} ${colorClasses.textPrimary}`}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
                   >
                     CANCEL
                   </Button>
@@ -698,15 +698,15 @@ export default function VehiclesPage() {
                 placeholder="Search by number, company, model, or name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm"
+                className="pl-10 bg-[#1a1c1e] border-white/10 font-mono text-sm text-white"
               />
             </div>
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full md:w-[200px] bg-[#1a1c1e] border-white/10 font-mono">
+              <SelectTrigger className="w-full md:w-[200px] bg-white border-white/10 font-mono">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder="Filter by type"  className="text-white"/>
               </SelectTrigger>
-              <SelectContent className="bg-[#25282c] border-white/10">
+              <SelectContent className="bg-[#25282c] border-white/10 text-white">
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="car">Car</SelectItem>
                 <SelectItem value="bike">Bike</SelectItem>
@@ -834,13 +834,13 @@ export default function VehiclesPage() {
                               e.stopPropagation();
                               handleRowClick(vehicle);
                             }}
-                            className="font-mono text-xs hover:bg-white/10"
+                            className="font-mono text-xs hover:bg-white/10 text-white"
                           >
                             <Eye className="h-4 w-4 mr-2 text-[#22d3ee]" />
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            className="font-mono text-xs hover:bg-white/10"
+                            className="font-mono text-xs hover:bg-white/10 text-white"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditVehicle(vehicle);
@@ -849,7 +849,7 @@ export default function VehiclesPage() {
                             <Edit className="h-4 w-4 mr-2 text-[#3b82f6]" />
                             Edit Vehicle
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-white/10" />
+                          <DropdownMenuSeparator className="bg-white/10 text-white" />
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();

@@ -61,9 +61,6 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   doc.setFont('helvetica', 'normal');
   doc.text(`Invoice #: ${data.invoiceNumber}`, pageWidth - margin, 20, { align: 'right' });
   doc.text(`Date: ${formatDate(data.issueDate)}`, pageWidth - margin, 28, { align: 'right' });
-  if (data.dueDate) {
-    doc.text(`Due Date: ${formatDate(data.dueDate)}`, pageWidth - margin, 36, { align: 'right' });
-  }
 
   yPos = 60;
 
