@@ -57,7 +57,7 @@ import { useGetJobsByServiceId, useCreateJob, useUpdateJob, useDeleteJob } from 
 import { useGetCustomersByServiceId } from "@/firebase/hooks/useCustomer";
 import { useGetVehiclesByServiceId } from "@/firebase/hooks/useVehicle";
 import { Job, JobWorkItem, Invoice } from "@/firebase/types";
-import { useCreateInvoice, useUpdateInvoice } from "@/firebase/hooks/useInvoice";
+import { useCreateInvoice, useUpdateInvoice, useGetInvoicesByServiceId } from "@/firebase/hooks/useInvoice";
 import { generateInvoicePDFBlob, generateInvoicePDFDataURL } from "@/lib/invoicePdf";
 import { InvoiceStorageService } from "@/firebase/services/InvoiceStorageService";
 import { useGetService } from "@/firebase/hooks/useService";
@@ -121,6 +121,11 @@ export default function JobsPage() {
 
   // Get service data for invoice
   const { data: serviceData } = useGetService(serviceId, {
+    enabled: !!serviceId,
+  });
+
+  // Get invoices to check for existing invoices
+  const { data: invoices = [] } = useGetInvoicesByServiceId(serviceId, {
     enabled: !!serviceId,
   });
 
@@ -1456,6 +1461,19 @@ export default function JobsPage() {
                     if (!selectedJob || !serviceId) return;
                     
                     try {
+                      // Check if invoice already exists for this job
+                      const existingInvoice = invoices.find(inv => inv.jobId === selectedJob.jobId);
+                      if (existingInvoice) {
+                        const confirmRegenerate = confirm(
+                          `An invoice (${existingInvoice.invoiceNumber}) already exists for this job. ` +
+                          "Do you want to view it instead of generating a new one?"
+                        );
+                        if (confirmRegenerate) {
+                          router.push(`/user/invoices?jobId=${selectedJob.jobId}`);
+                          return;
+                        }
+                      }
+                      
                       // Parse work items from job
                       let workItems: JobWorkItem[] = [];
                       if (selectedJob.jobList) {
