@@ -182,13 +182,13 @@ export default function LoginPage() {
 
             {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
+              {/* <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   className="w-4 h-4 bg-[#1a1c1e] border border-white/10 text-[#3b82f6] focus:ring-[#3b82f6] focus:ring-1 rounded-sm"
                 />
                 <span className={`font-mono text-[0.7rem] ${colorClasses.textSecondary} uppercase`}>Remember_Me</span>
-              </label>
+              </label> */}
               <Link
                 href="/auth/forgotpassword"
                 className={`font-mono text-[0.7rem] ${colorClasses.textCyan} ${colorClasses.textBlue.replace('text-', 'hover:text-')} transition-colors duration-300 uppercase`}
