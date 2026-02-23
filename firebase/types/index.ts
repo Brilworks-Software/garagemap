@@ -94,7 +94,7 @@ export interface Invoice {
     tax: number | null;
     discount: number | null;
     total: number;
-    status: "sent" | "paid" | "overdue" | "cancelled";
+    status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
     issueDate: Date;
     dueDate: Date | null;
     paidDate: Date | null;
