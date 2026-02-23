@@ -20,13 +20,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -243,24 +236,42 @@ export default function ConfigurePage() {
                     <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
                       Service Type
                     </Label>
-                    <Select 
-                      value={serviceType || ""} 
-                      onValueChange={(value) => setServiceType(value as "garage" | "service" | null)}
-                    >
-                      <SelectTrigger 
-                        style={{ backgroundColor: colors.background.input }}
-                        className={`${colorClasses.borderInput} font-mono ${colorClasses.textPrimary}`}
-                      >
-                        <SelectValue placeholder="Select service type" />
-                      </SelectTrigger>
-                      <SelectContent 
-                        style={{ backgroundColor: colors.background.surface }}
-                        className={colorClasses.borderInput}
-                      >
-                        <SelectItem value="garage" className={`${colorClasses.textPrimary} font-mono `}>Garage</SelectItem>
-                        <SelectItem value="service" className={`${colorClasses.textPrimary} font-mono `}>Service Center</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="serviceType"
+                          value="garage"
+                          checked={serviceType === "garage"}
+                          onChange={(e) => setServiceType(e.target.value as "garage" | "service" | null)}
+                          className="w-4 h-4 accent-[#3b82f6] cursor-pointer"
+                          style={{ 
+                            backgroundColor: colors.background.input,
+                            borderColor: colors.border.input,
+                          }}
+                        />
+                        <span className={`font-mono text-sm ${colorClasses.textPrimary} group-hover:${colorClasses.textCyan.replace('text-', 'text-')} transition-colors`}>
+                          Garage
+                        </span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="serviceType"
+                          value="service"
+                          checked={serviceType === "service"}
+                          onChange={(e) => setServiceType(e.target.value as "garage" | "service" | null)}
+                          className="w-4 h-4 accent-[#3b82f6] cursor-pointer"
+                          style={{ 
+                            backgroundColor: colors.background.input,
+                            borderColor: colors.border.input,
+                          }}
+                        />
+                        <span className={`font-mono text-sm ${colorClasses.textPrimary} group-hover:${colorClasses.textCyan.replace('text-', 'text-')} transition-colors`}>
+                          Service Center
+                        </span>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="space-y-2">

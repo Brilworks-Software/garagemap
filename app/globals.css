@@ -118,6 +118,10 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   cursor: crosshair;
 }

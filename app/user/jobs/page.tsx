@@ -42,6 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +57,9 @@ import { useGetUser } from "@/firebase/hooks/useUser";
 import { useGetJobsByServiceId, useCreateJob, useUpdateJob, useDeleteJob } from "@/firebase/hooks/useJob";
 import { useGetCustomersByServiceId } from "@/firebase/hooks/useCustomer";
 import { useGetVehiclesByServiceId } from "@/firebase/hooks/useVehicle";
-import { Job, JobWorkItem, Invoice } from "@/firebase/types";
+import { useGetInventoryByServiceId, useAdjustInventoryQuantity } from "@/firebase/hooks/useInventory";
+import { useGetActiveMenuByServiceId } from "@/firebase/hooks/useMenu";
+import { Job, JobWorkItem, Invoice, Inventory, MenuItem } from "@/firebase/types";
 import { useCreateInvoice, useUpdateInvoice, useGetInvoicesByServiceId } from "@/firebase/hooks/useInvoice";
 import { generateInvoicePDFBlob, generateInvoicePDFDataURL } from "@/lib/invoicePdf";
 import { InvoiceStorageService } from "@/firebase/services/InvoiceStorageService";
@@ -97,6 +100,9 @@ export default function JobsPage() {
   const [newWorkItem, setNewWorkItem] = useState("");
   const [newWorkItemPrice, setNewWorkItemPrice] = useState("");
   const [isWorkListModalOpen, setIsWorkListModalOpen] = useState(false);
+  const [selectedInventoryItemId, setSelectedInventoryItemId] = useState("");
+  const [inventoryQuantity, setInventoryQuantity] = useState("");
+  const [selectedMenuItemId, setSelectedMenuItemId] = useState("");
   const [formError, setFormError] = useState("");
 
   // Get current user
@@ -118,6 +124,12 @@ export default function JobsPage() {
   const { data: vehicles = [] } = useGetVehiclesByServiceId(serviceId, {
     enabled: !!serviceId,
   });
+  const { data: inventoryItems = [] } = useGetInventoryByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
+  const { data: menuItems = [] } = useGetActiveMenuByServiceId(serviceId, {
+    enabled: !!serviceId,
+  });
 
   // Get service data for invoice
   const { data: serviceData } = useGetService(serviceId, {
@@ -135,6 +147,7 @@ export default function JobsPage() {
   const deleteJobMutation = useDeleteJob();
   const createInvoiceMutation = useCreateInvoice();
   const updateInvoiceMutation = useUpdateInvoice();
+  const adjustInventoryMutation = useAdjustInventoryQuantity();
 
   // Filter vehicles by selected customer
   const availableVehicles = vehicles.filter(
@@ -157,18 +170,116 @@ export default function JobsPage() {
         setJobNotes("");
         setJobWorkList([]);
         setNewWorkItem("");
+        setNewWorkItemPrice("");
+        setSelectedInventoryItemId("");
+        setInventoryQuantity("");
+        setSelectedMenuItemId("");
         setFormError("");
       }, 0);
     }
   }, [isDialogOpen]);
 
+  // Reset form error when work item modal closes
+  useEffect(() => {
+    if (!isWorkListModalOpen) {
+      setTimeout(() => {
+        setFormError("");
+      }, 0);
+    }
+  }, [isWorkListModalOpen]);
+
   const handleAddWorkItem = () => {
-    if (newWorkItem.trim()) {
-      const price = parseFloat(newWorkItemPrice) || 0;
-      setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
+    // Clear any previous errors
+    setFormError("");
+    
+    // Check if menu item is selected and has inventory
+    const selectedMenuItem = selectedMenuItemId ? menuItems.find((item: MenuItem) => item.menuId === selectedMenuItemId) : null;
+    
+    // If inventory item is selected directly in manual entry section
+    if (selectedInventoryItemId && inventoryQuantity) {
+      const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
+      if (!inventoryItem) {
+        setFormError("Selected inventory item not found.");
+        return false;
+      }
+      const quantity = parseInt(inventoryQuantity) || 1;
+      if (quantity <= 0) {
+        setFormError("Quantity must be greater than 0.");
+        return false;
+      }
+      if (quantity > inventoryItem.quantity) {
+        setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}`);
+        return false;
+      }
+      const price = (inventoryItem.sellingPrice || 0) * quantity;
+      setJobWorkList([...jobWorkList, { 
+        title: `${inventoryItem.itemName || 'Inventory Item'} (${quantity} ${inventoryItem.unit || 'unit'})`, 
+        price,
+        inventoryItemId: selectedInventoryItemId,
+        quantity
+      }]);
+      setSelectedInventoryItemId("");
+      setInventoryQuantity("");
+      setSelectedMenuItemId("");
       setNewWorkItem("");
       setNewWorkItemPrice("");
+      setFormError("");
+      return true;
     }
+    
+    if (newWorkItem.trim()) {
+      const price = parseFloat(newWorkItemPrice) || 0;
+      
+      // If menu item is selected and has inventory, include inventory info
+      if (selectedMenuItem && selectedMenuItem.inventoryItemId && selectedMenuItem.quantity) {
+        // Validate inventory quantity
+        const inventoryItem = inventoryItems.find(item => item.itemId === selectedMenuItem.inventoryItemId);
+        if (inventoryItem) {
+          const menuQuantity = selectedMenuItem.quantity;
+          if (menuQuantity > inventoryItem.quantity) {
+            setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}, Required: ${menuQuantity}`);
+            return false;
+          }
+        }
+        
+        setJobWorkList([...jobWorkList, { 
+          title: newWorkItem.trim(), 
+          price,
+          inventoryItemId: selectedMenuItem.inventoryItemId,
+          quantity: selectedMenuItem.quantity
+        }]);
+      } else if (selectedInventoryItemId && inventoryQuantity) {
+        // If inventory is selected in manual entry section
+        const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
+        if (inventoryItem) {
+          const quantity = parseInt(inventoryQuantity) || 1;
+          if (quantity > inventoryItem.quantity) {
+            setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}`);
+            return false;
+          }
+          const calculatedPrice = (inventoryItem.sellingPrice || 0) * quantity;
+          setJobWorkList([...jobWorkList, { 
+            title: newWorkItem.trim(), 
+            price: calculatedPrice,
+            inventoryItemId: selectedInventoryItemId,
+            quantity
+          }]);
+        } else {
+          setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
+        }
+      } else {
+        setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
+      }
+      
+      setSelectedMenuItemId("");
+      setNewWorkItem("");
+      setNewWorkItemPrice("");
+      setSelectedInventoryItemId("");
+      setInventoryQuantity("");
+      setFormError("");
+      return true;
+    }
+    return false;
   };
 
   const handleRemoveWorkItem = (index: number) => {
@@ -207,7 +318,8 @@ export default function JobsPage() {
     }
 
     try {
-      await createJobMutation.mutateAsync({
+      // Create the job first
+      const jobId = await createJobMutation.mutateAsync({
         serviceId,
         customerId: selectedCustomerId,
         vehicleId: selectedVehicleId,
@@ -224,6 +336,22 @@ export default function JobsPage() {
           jobNotes: jobNotes || null,
         },
       });
+
+      // Update inventory quantities for items used in the job
+      for (const workItem of jobWorkList) {
+        if (workItem.inventoryItemId && workItem.quantity) {
+          try {
+            await adjustInventoryMutation.mutateAsync({
+              itemId: workItem.inventoryItemId,
+              quantityChange: -workItem.quantity, // Negative to decrease
+            });
+          } catch (invError) {
+            console.error(`Failed to update inventory for item ${workItem.inventoryItemId}:`, invError);
+            // Continue with other items even if one fails
+          }
+        }
+      }
+
       setIsDialogOpen(false);
     } catch (err: unknown) {
       const error = err as Error;
@@ -354,6 +482,10 @@ export default function JobsPage() {
         setJobNotes("");
         setJobWorkList([]);
         setNewWorkItem("");
+        setNewWorkItemPrice("");
+        setSelectedMenuItemId("");
+        setSelectedInventoryItemId("");
+        setInventoryQuantity("");
         setFormError("");
         setSelectedJob(null);
       }, 0);
@@ -611,61 +743,51 @@ export default function JobsPage() {
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer *
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={selectedCustomerId}
                     onValueChange={setSelectedCustomerId}
-                  >
-                    <SelectTrigger 
-                      style={{ backgroundColor: colors.background.input }}
-                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
-                    >
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent 
-                      style={{ backgroundColor: colors.background.surface }}
-                      className={colorClasses.borderInput}
-                    >
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.customerId} value={customer.customerId} className={`${colorClasses.textPrimary} font-mono`}>
-                          {customer.customerName || "Unnamed Customer"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select customer"
+                    searchPlaceholder="Search customers..."
+                    items={customers.map((customer) => ({
+                      value: customer.customerId,
+                      label: customer.customerName || "Unnamed Customer",
+                    }))}
+                    triggerStyle={{ backgroundColor: colors.background.input }}
+                    triggerClassName={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    contentStyle={{ backgroundColor: colors.background.surface }}
+                    contentClassName={colorClasses.borderInput}
+                    itemClassName={`${colorClasses.textPrimary} font-mono`}
+                    emptyMessage="No customers found"
+                  />
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Vehicle *
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={selectedVehicleId}
                     onValueChange={setSelectedVehicleId}
                     disabled={!selectedCustomerId}
-                  >
-                    <SelectTrigger 
-                      style={{ backgroundColor: colors.background.input }}
-                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      <SelectValue placeholder={selectedCustomerId ? "Select vehicle" : "Select customer first"} />
-                    </SelectTrigger>
-                    <SelectContent 
-                      style={{ backgroundColor: colors.background.surface }}
-                      className={colorClasses.borderInput}
-                    >
-                      {availableVehicles.map((vehicle) => {
-                        const vehicleInfo = [
-                          vehicle.vehicleCompany,
-                          vehicle.vehicleModel,
-                          vehicle.vehicleYear?.toString(),
-                        ].filter(Boolean).join(" ") || vehicle.vehicleNumber || "Unknown Vehicle";
-                        return (
-                          <SelectItem key={vehicle.vehicleId} value={vehicle.vehicleId} className={`${colorClasses.textPrimary} font-mono`}>
-                            {vehicleInfo}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                    placeholder={selectedCustomerId ? "Select vehicle" : "Select customer first"}
+                    searchPlaceholder="Search vehicles..."
+                    items={availableVehicles.map((vehicle) => {
+                      const vehicleInfo = [
+                        vehicle.vehicleCompany,
+                        vehicle.vehicleModel,
+                        vehicle.vehicleYear?.toString(),
+                      ].filter(Boolean).join(" ") || vehicle.vehicleNumber || "Unknown Vehicle";
+                      return {
+                        value: vehicle.vehicleId,
+                        label: vehicleInfo,
+                      };
+                    })}
+                    triggerStyle={{ backgroundColor: colors.background.input }}
+                    triggerClassName={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono disabled:opacity-50 disabled:cursor-not-allowed`}
+                    contentStyle={{ backgroundColor: colors.background.surface }}
+                    contentClassName={colorClasses.borderInput}
+                    itemClassName={`${colorClasses.textPrimary} font-mono`}
+                    emptyMessage="No vehicles found"
+                  />
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
@@ -781,9 +903,23 @@ export default function JobsPage() {
                         className={`flex items-center justify-between p-2 rounded`}
                         style={{ backgroundColor: colors.background.surface }}
                       >
-                        <span className={`font-mono text-xs ${colorClasses.textPrimary} flex-1`}>
-                          {index + 1}. {item.title}
-                        </span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-mono text-xs ${colorClasses.textPrimary}`}>
+                              {index + 1}. {item.title}
+                            </span>
+                            {item.inventoryItemId && (
+                              <Badge className={`${colorClasses.badgeInfo} text-[0.65rem]`}>
+                                Inventory
+                              </Badge>
+                            )}
+                          </div>
+                          {item.quantity && (
+                            <span className={`font-mono text-[0.65rem] ${colorClasses.textSecondary} block mt-1`}>
+                              Qty: {item.quantity}
+                            </span>
+                          )}
+                        </div>
                         <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2 mr-2`}>
                           ${item.price.toFixed(2)}
                         </span>
@@ -823,40 +959,277 @@ export default function JobsPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                        Work Item Description *
-                      </label>
-                      <Input
-                        value={newWorkItem}
-                        onChange={(e) => setNewWorkItem(e.target.value)}
-                        style={{ backgroundColor: colors.background.input }}
-                        className={colorClasses.borderInput}
-                        placeholder="e.g., Change engine oil, Replace brake pads"
-                        autoFocus
-                      />
-                    </div>
-                    <div>
-                      <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                        Price ($)
-                      </label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={newWorkItemPrice}
-                        onChange={(e) => setNewWorkItemPrice(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddWorkItem();
-                          }
-                        }}
-                        style={{ backgroundColor: colors.background.input }}
-                        className={colorClasses.borderInput}
-                        placeholder="0.00"
-                      />
-                    </div>
+                    {/* Error display for work item modal */}
+                    {formError && (
+                      <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                        <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
+                      </div>
+                    )}
+                    <>
+                        {/* Select from Menu Option */}
+                        {menuItems.length > 0 && (
+                          <div className={`border-b pb-4 mb-4`} style={{ borderColor: colors.border.input }}>
+                            <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-3 uppercase`}>
+                              Select from Menu
+                            </label>
+                            <Select
+                              value={selectedMenuItemId || "none"}
+                              onValueChange={(value) => {
+                                if (value === "none") {
+                                  setSelectedMenuItemId("");
+                                  setNewWorkItem("");
+                                  setNewWorkItemPrice("");
+                                  setSelectedInventoryItemId("");
+                                  setInventoryQuantity("");
+                                  return;
+                                }
+                                setSelectedMenuItemId(value);
+                                const menuItem = menuItems.find((item: MenuItem) => item.menuId === value);
+                                if (menuItem) {
+                                  setNewWorkItem(menuItem.title);
+                                  setNewWorkItemPrice(menuItem.price.toString());
+                                  // If menu item has inventory linked, populate inventory fields
+                                  if (menuItem.inventoryItemId && menuItem.quantity) {
+                                    setSelectedInventoryItemId(menuItem.inventoryItemId);
+                                    setInventoryQuantity(menuItem.quantity.toString());
+                                  } else {
+                                    setSelectedInventoryItemId(""); // Clear inventory selection
+                                    setInventoryQuantity("");
+                                  }
+                                }
+                              }}
+                            >
+                              <SelectTrigger 
+                                style={{ backgroundColor: colors.background.input }}
+                                className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                              >
+                                <SelectValue placeholder="Select predefined work item (optional)" />
+                              </SelectTrigger>
+                              <SelectContent 
+                                style={{ backgroundColor: colors.background.surface }}
+                                className={colorClasses.borderInput}
+                              >
+                                <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono`}>
+                                  None - Enter manually
+                                </SelectItem>
+                                {menuItems.map((item: MenuItem) => (
+                                  <SelectItem 
+                                    key={item.menuId} 
+                                    value={item.menuId}
+                                    className={`${colorClasses.textPrimary} font-mono`}
+                                  >
+                                    <div className="flex items-center justify-between w-full">
+                                      <span>{item.title}</span>
+                                      <span className={`ml-4 text-xs ${colorClasses.textSecondary}`}>
+                                        {item.category && (
+                                          <Badge className={colorClasses.badgeInfo} style={{ marginRight: '8px' }}>
+                                            {item.category}
+                                          </Badge>
+                                        )}
+                                        {formatCurrency(item.price)}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {selectedMenuItemId && (() => {
+                              const menuItem = menuItems.find((item: MenuItem) => item.menuId === selectedMenuItemId);
+                              return menuItem ? (
+                                <div className={`font-mono text-xs ${colorClasses.textSecondary} mt-2 space-y-1`}>
+                                  <p>Selected: {menuItem.title} - {formatCurrency(menuItem.price || 0)}</p>
+                                  {menuItem.inventoryItemId && menuItem.quantity && (
+                                    <p className="text-[#22d3ee]">
+                                      Linked Inventory: {inventoryItems.find(i => i.itemId === menuItem.inventoryItemId)?.itemName || "Unknown"} 
+                                      (Qty: {menuItem.quantity})
+                                    </p>
+                                  )}
+                                </div>
+                              ) : null;
+                            })()}
+                          </div>
+                        )}
+
+                        <div>
+                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
+                            Work Item Description *
+                          </label>
+                          <Input
+                            value={newWorkItem}
+                            onChange={(e) => {
+                              setNewWorkItem(e.target.value);
+                              setSelectedMenuItemId(""); // Clear menu selection when manually typing
+                            }}
+                            style={{ backgroundColor: colors.background.input }}
+                            className={colorClasses.borderInput}
+                            placeholder="e.g., Change engine oil, Replace brake pads"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
+                            Price ($)
+                          </label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={newWorkItemPrice}
+                            onChange={(e) => {
+                              setNewWorkItemPrice(e.target.value);
+                              setSelectedMenuItemId(""); // Clear menu selection when manually typing
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddWorkItem();
+                              }
+                            }}
+                            style={{ backgroundColor: colors.background.input }}
+                            className={colorClasses.borderInput}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        
+                        {/* Add Inventory Item Option */}
+                        <div className={`border-t pt-4`} style={{ borderColor: colors.border.input }}>
+                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-3 uppercase`}>
+                            Or Add from Inventory
+                          </label>
+                          <div className="space-y-3">
+                            <div>
+                              <SearchableSelect
+                                value={selectedInventoryItemId || "none"}
+                                onValueChange={(value) => {
+                                  if (value === "none") {
+                                    setSelectedInventoryItemId("");
+                                    setInventoryQuantity("");
+                                    return;
+                                  }
+                                  setSelectedInventoryItemId(value);
+                                }}
+                                placeholder="Select inventory item (optional)"
+                                searchPlaceholder="Search inventory items..."
+                                items={[
+                                  {
+                                    value: "none",
+                                    label: "None - Manual Entry",
+                                    searchText: "none manual entry",
+                                    displayText: "None - Manual Entry",
+                                  },
+                                  ...inventoryItems.map((item: Inventory) => {
+                                    const isAvailable = item.quantity > 0 && item.status !== "inactive";
+                                    const itemName = item.itemName || item.itemCode || "Unnamed Item";
+                                    return {
+                                      value: item.itemId,
+                                      searchText: itemName,
+                                      displayText: itemName, // Text to show in trigger button
+                                      label: (
+                                        <div className="flex items-center justify-between w-full">
+                                          <span>{itemName}</span>
+                                          <span className={`ml-4 text-xs ${isAvailable ? colorClasses.textSecondary : colorClasses.textRed}`}>
+                                            {item.quantity > 0 ? (
+                                              <>Stock: {item.quantity} {item.unit || ""} | ${item.sellingPrice || 0}/unit</>
+                                            ) : (
+                                              <>Out of Stock</>
+                                            )}
+                                          </span>
+                                        </div>
+                                      ),
+                                      disabled: !isAvailable,
+                                    };
+                                  }),
+                                ]}
+                                triggerStyle={{ backgroundColor: colors.background.input }}
+                                triggerClassName={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                                contentStyle={{ backgroundColor: colors.background.surface }}
+                                contentClassName={colorClasses.borderInput}
+                                itemClassName={`${colorClasses.textPrimary} font-mono`}
+                                emptyMessage="No inventory items found"
+                              />
+                            </div>
+                            {selectedInventoryItemId && (
+                              <div>
+                                <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
+                                  Quantity
+                                </label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={inventoryQuantity}
+                                  onChange={(e) => {
+                                    setInventoryQuantity(e.target.value);
+                                    // Clear error when user changes quantity
+                                    if (formError) {
+                                      setFormError("");
+                                    }
+                                    // Auto-fill price from inventory
+                                    const item = inventoryItems.find(i => i.itemId === selectedInventoryItemId);
+                                    if (item && e.target.value) {
+                                      const qty = parseInt(e.target.value) || 1;
+                                      setNewWorkItemPrice(((item.sellingPrice || 0) * qty).toFixed(2));
+                                      setNewWorkItem(item.itemName || item.itemCode || "Inventory Item");
+                                      // Real-time validation
+                                      if (qty > item.quantity) {
+                                        setFormError(`Insufficient stock. Available: ${item.quantity} ${item.unit || "units"}`);
+                                      }
+                                    }
+                                  }}
+                                  style={{ backgroundColor: colors.background.input }}
+                                  className={colorClasses.borderInput}
+                                  placeholder="Enter quantity"
+                                />
+                                <p className={`font-mono text-xs ${colorClasses.textSecondary} mt-1`}>
+                                  Available: {inventoryItems.find(i => i.itemId === selectedInventoryItemId)?.quantity || 0} {inventoryItems.find(i => i.itemId === selectedInventoryItemId)?.unit || "units"}
+                                </p>
+                                {formError && selectedInventoryItemId && (
+                                  <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded mt-2`} style={{ borderColor: `${colors.primary.red}80` }}>
+                                    <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {selectedInventoryItemId && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                  const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
+                                  if (inventoryItem) {
+                                    const quantity = parseInt(inventoryQuantity) || 1;
+                                    if (quantity <= 0) {
+                                      setFormError("Quantity must be greater than 0.");
+                                      return;
+                                    }
+                                    if (quantity > inventoryItem.quantity) {
+                                      setFormError(`Insufficient stock. Available: ${inventoryItem.quantity}`);
+                                      return;
+                                    }
+                                    const price = (inventoryItem.sellingPrice || 0) * quantity;
+                                    setJobWorkList([...jobWorkList, { 
+                                      title: `${inventoryItem.itemName || 'Inventory Item'} (${quantity} ${inventoryItem.unit || 'unit'})`, 
+                                      price,
+                                      inventoryItemId: selectedInventoryItemId,
+                                      quantity
+                                    }]);
+                                    setSelectedInventoryItemId("");
+                                    setInventoryQuantity("");
+                                    setSelectedMenuItemId("");
+                                    setNewWorkItem("");
+                                    setNewWorkItemPrice("");
+                                    setIsWorkListModalOpen(false);
+                                  }
+                                }}
+                                className={`w-full font-mono uppercase ${colorClasses.buttonPrimary}`}
+                                disabled={!selectedInventoryItemId || !inventoryQuantity}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Inventory Item
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                    </>
                     <div className="flex gap-4">
                       <Button
                         type="button"
@@ -865,6 +1238,10 @@ export default function JobsPage() {
                           setIsWorkListModalOpen(false);
                           setNewWorkItem("");
                           setNewWorkItemPrice("");
+                          setSelectedInventoryItemId("");
+                          setInventoryQuantity("");
+                          setSelectedMenuItemId("");
+                          setFormError("");
                         }}
                         className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary}`}
                         style={{ color: colors.text.primary }}
@@ -874,8 +1251,11 @@ export default function JobsPage() {
                       <Button
                         type="button"
                         onClick={() => {
-                          handleAddWorkItem();
-                          setIsWorkListModalOpen(false);
+                          const success = handleAddWorkItem();
+                          // Only close modal if item was successfully added (no error)
+                          if (success) {
+                            setIsWorkListModalOpen(false);
+                          }
                         }}
                         className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
                         disabled={!newWorkItem.trim()}
@@ -1581,7 +1961,7 @@ export default function JobsPage() {
                           tax,
                           discount,
                           total,
-                          status: "draft" as const,
+                          status: "sent" as const,
                           issueDate,
                           dueDate,
                           paidDate: null,
@@ -1696,7 +2076,7 @@ export default function JobsPage() {
                   const invoiceData = {
                     ...pendingInvoiceData.invoiceData,
                     paidDate: paidDate ? new Date(paidDate) : null,
-                    status: (paidDate ? "paid" : pendingInvoiceData.invoiceData.status) as "draft" | "sent" | "paid" | "overdue" | "cancelled",
+                    status: (paidDate ? "paid" : pendingInvoiceData.invoiceData.status) as "sent" | "paid" | "overdue" | "cancelled",
                   };
                   
                   // Create invoice in Firestore

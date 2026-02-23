@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useResetPassword } from "@/firebase/hooks/useAuth";
 import { colors, colorClasses } from "@/lib/colors";
@@ -46,7 +47,13 @@ export default function ForgotPasswordPage() {
         {/* Logo/Header */}
         <div className="text-center mb-12">
           <Link href="/" className="inline-flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-2xl mb-4 hover:opacity-80 transition-opacity">
-            <div className="w-6 h-6 bg-[#3b82f6] shadow-[0_0_15px_#3b82f6] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]"></div>
+            <Image 
+              src="/logo.png" 
+              alt="GarageMap Logo" 
+              width={48} 
+              height={48} 
+              className="object-contain"
+            />
             GARAGEMAP_OS
           </Link>
           <p className="font-mono text-xs text-[#22d3ee] uppercase tracking-wider opacity-80">

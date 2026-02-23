@@ -85,12 +85,11 @@ function InvoicesContent() {
     enabled: !!serviceId,
   });
 
-  // Determine which invoices to show
+  // Determine which invoices to show (exclude draft invoices)
   const invoices = useMemo(() => {
-    if (jobIdFilter && jobInvoices.length > 0) {
-      return jobInvoices;
-    }
-    return allInvoices;
+    const invoicesToFilter = jobIdFilter && jobInvoices.length > 0 ? jobInvoices : allInvoices;
+    // Filter out any draft invoices
+    return invoicesToFilter.filter((inv) => inv.status !== "draft");
   }, [jobIdFilter, jobInvoices, allInvoices]);
 
   const getCustomerName = (customerId: string) => {
@@ -104,8 +103,15 @@ function InvoicesContent() {
       invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.invoiceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customerName.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Map "pending" filter to "sent" status
+    let statusToMatch = statusFilter;
+    if (statusFilter === "pending") {
+      statusToMatch = "sent";
+    }
+    
     const matchesStatus =
-      statusFilter === "all" || invoice.status.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "all" || invoice.status.toLowerCase() === statusToMatch.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
@@ -121,12 +127,6 @@ function InvoicesContent() {
         return (
           <Badge className={colorClasses.badgeInfo}>
             Sent
-          </Badge>
-        );
-      case "draft":
-        return (
-          <Badge className={colorClasses.badgeMuted}>
-            Draft
           </Badge>
         );
       case "overdue":
@@ -179,7 +179,7 @@ function InvoicesContent() {
 
   // Calculate stats
   const totalAmount = invoices.reduce((sum, inv) => sum + inv.total, 0);
-  const pendingInvoices = invoices.filter((inv) => inv.status === "sent" || inv.status === "draft");
+  const pendingInvoices = invoices.filter((inv) => inv.status === "sent");
   const overdueInvoices = invoices.filter((inv) => inv.status === "overdue");
   const paidInvoices = invoices.filter((inv) => inv.status === "paid");
 

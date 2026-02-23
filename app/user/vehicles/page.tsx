@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
   DialogContent,
@@ -349,28 +350,22 @@ export default function VehiclesPage() {
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Customer *
                   </label>
-                  <Select
+                  <SearchableSelect
                     value={selectedCustomerId}
                     onValueChange={setSelectedCustomerId}
-                    required
-                  >
-                    <SelectTrigger
-                      style={{ backgroundColor: colors.background.input }}
-                      className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
-                    >
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent
-                      style={{ backgroundColor: colors.background.surface }}
-                      className={colorClasses.borderInput}
-                    >
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.customerId} value={customer.customerId} className="text-white font-mono ">
-                          {customer.customerName || customer.customerId}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select customer"
+                    searchPlaceholder="Search customers..."
+                    items={customers.map((customer) => ({
+                      value: customer.customerId,
+                      label: customer.customerName || customer.customerId,
+                    }))}
+                    triggerStyle={{ backgroundColor: colors.background.input }}
+                    triggerClassName={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
+                    contentStyle={{ backgroundColor: colors.background.surface }}
+                    contentClassName={colorClasses.borderInput}
+                    itemClassName="text-white font-mono"
+                    emptyMessage="No customers found"
+                  />
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSignUp } from "@/firebase/hooks/useAuth";
 import { useCreateUser } from "@/firebase/hooks/useUser";
@@ -9,7 +10,7 @@ import { useCreateService } from "@/firebase/hooks/useService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { colors, colorClasses } from "@/lib/colors";
 
 export default function RegisterPage() {
@@ -22,6 +23,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [ownerName, setOwnerName] = useState("");
 
   // Step 2: Service info
@@ -126,7 +129,13 @@ export default function RegisterPage() {
         {/* Logo/Header */}
         <div className="text-center mb-12">
           <Link href="/" className="inline-flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-2xl mb-4 hover:opacity-80 transition-opacity">
-            <div className="w-6 h-6 bg-[#3b82f6] shadow-[0_0_15px_#3b82f6] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]"></div>
+            <Image 
+              src="/logo.png" 
+              alt="GarageMap Logo" 
+              width={48} 
+              height={48} 
+              className="object-contain"
+            />
             GARAGEMAP_OS
           </Link>
           <p className="font-mono text-xs text-[#22d3ee] uppercase tracking-wider opacity-80">
@@ -220,16 +229,26 @@ export default function RegisterPage() {
                   <label htmlFor="password" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
                     Password
                   </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
-                    placeholder="Minimum 6 characters"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 pr-12 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
+                      placeholder="Minimum 6 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-[#94a3b8] hover:text-[#3b82f6] transition-colors"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Confirm Password Field */}
@@ -237,16 +256,26 @@ export default function RegisterPage() {
                   <label htmlFor="confirmPassword" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
                     Confirm_Password
                   </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
-                    placeholder="Re-enter password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 pr-12 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
+                      placeholder="Re-enter password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-[#94a3b8] hover:text-[#3b82f6] transition-colors"
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Error Message */}
@@ -291,10 +320,10 @@ export default function RegisterPage() {
                       <SelectValue placeholder="Select service type..." className="placeholder:text-[#475569]" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1a1c1e] border-white/10 text-white font-mono">
-                      <SelectItem value="garage" className="focus:bg-[#3b82f6]/50">
+                      <SelectItem value="garage" className="focus:bg-[#3b82f6]/50 focus:text-white">
                         Garage
                       </SelectItem>
-                      <SelectItem value="service" className="focus:bg-[#3b82f6]/50">
+                      <SelectItem value="service" className="focus:bg-[#3b82f6]/50 focus:text-white">
                         Service Center
                       </SelectItem>
                     </SelectContent>

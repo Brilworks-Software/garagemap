@@ -2,59 +2,64 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSignIn } from "@/firebase/hooks/useAuth";
 import { useUpdateUser } from "@/firebase/hooks/useUser";
 import { AuthService } from "@/firebase/services/AuthService";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { colors, colorClasses } from "@/lib/colors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const router = useRouter();
   const signInMutation = useSignIn();
   const updateUserMutation = useUpdateUser();
 
-  // Check if user is logged in but email not verified
-  useEffect(() => {
-    const checkEmailVerification = () => {
-      const currentUser = AuthService.getCurrentUser();
-      if (currentUser && !currentUser.emailVerified) {
-        setShowVerificationModal(true);
-      }
-    };
-    checkEmailVerification();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setShowVerificationModal(false);
     
     try {
       const user = await signInMutation.mutateAsync({ email, password });
       
-      // Check if email is verified
-      if (user && !user.emailVerified) {
-        setShowVerificationModal(true);
-        setError("Please verify your email address before signing in.");
-        return;
-      }
-      
-      // Email is verified - update user document emailVerified to true
-      if (user && user.emailVerified && user.uid) {
+      // Reload user to get the latest email verification status
+      if (user) {
         try {
-          await updateUserMutation.mutateAsync({
-            uid: user.uid,
-            data: { emailVerified: true },
-          });
-        } catch (updateError) {
-          // Log error but don't block login if update fails
-          console.error("Failed to update user emailVerified:", updateError);
+          await user.reload();
+        } catch (reloadError) {
+          // If reload fails, continue with the current user state
+          console.warn("Failed to reload user:", reloadError);
+        }
+        
+        const reloadedUser = AuthService.getCurrentUser();
+        
+        // Check if email is verified after reload (or use original user if reload failed)
+        const currentUser = reloadedUser || user;
+        if (currentUser && !currentUser.emailVerified) {
+          setShowVerificationModal(true);
+          setError("Please verify your email address before signing in.");
+          return;
+        }
+        
+        // Email is verified - update user document emailVerified to true
+        if (currentUser && currentUser.emailVerified && currentUser.uid) {
+          try {
+            await updateUserMutation.mutateAsync({
+              uid: currentUser.uid,
+              data: { emailVerified: true },
+            });
+          } catch (updateError) {
+            // Log error but don't block login if update fails
+            console.error("Failed to update user emailVerified:", updateError);
+          }
         }
       }
       
@@ -96,7 +101,13 @@ export default function LoginPage() {
         {/* Logo/Header */}
         <div className="text-center mb-12">
           <Link href="/" className="inline-flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-2xl mb-4 hover:opacity-80 transition-opacity">
-            <div className={`w-6 h-6 ${colorClasses.iconBgBlue} shadow-[0_0_15px_${colors.primary.blue}] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]`} style={{ boxShadow: `0 0 15px ${colors.primary.blue}` }}></div>
+            <Image 
+              src="/logo.png" 
+              alt="GarageMap Logo" 
+              width={48} 
+              height={48} 
+              className="object-contain"
+            />
             GARAGEMAP_OS
           </Link>
           <p className={`font-mono text-xs ${colorClasses.textCyan} uppercase tracking-wider opacity-80`}>
@@ -150,27 +161,37 @@ export default function LoginPage() {
               <label htmlFor="password" className={`block font-mono text-[0.65rem] ${colorClasses.textSecondary} mb-2 uppercase tracking-wider`}>
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={{ 
-                  backgroundColor: colors.background.input,
-                  borderColor: colors.border.input,
-                }}
-                className={`w-full px-4 py-3 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none transition-all duration-300 border`}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.blue;
-                  e.target.style.boxShadow = `0 0 0 1px ${colors.primary.blue}`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.border.input;
-                  e.target.style.boxShadow = 'none';
-                }}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{ 
+                    backgroundColor: colors.background.input,
+                    borderColor: colors.border.input,
+                  }}
+                  className={`w-full px-4 py-3 pr-12 ${colorClasses.textPrimary} font-mono text-sm focus:outline-none transition-all duration-300 border`}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = colors.primary.blue;
+                    e.target.style.boxShadow = `0 0 0 1px ${colors.primary.blue}`;
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = colors.border.input;
+                    e.target.style.boxShadow = 'none';
+                  }}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className={`absolute inset-y-0 right-0 flex items-center px-3 ${colorClasses.textSecondary} ${colorClasses.textBlue.replace('text-', 'hover:text-')} transition-colors`}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             {/* Error Message */}

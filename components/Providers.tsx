@@ -13,26 +13,30 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = AuthService.onAuthStateChanged((user) => {
-      // Don't redirect if we're already on auth pages
+      // Define public routes that don't require authentication
+      const publicRoutes = ['/', '/about', '/contact'];
+      const isPublicRoute = pathname && publicRoutes.includes(pathname);
       const isAuthPage = pathname?.startsWith('/auth');
       const isUserPage = pathname?.startsWith('/user');
       
       if (user) {
         // Check if email is verified
         if (!user.emailVerified) {
-          // Email not verified - redirect to login page
-          if (!isAuthPage) {
+          // Email not verified - redirect to login page (but allow public routes)
+          if (!isAuthPage && !isPublicRoute) {
             router.push('/auth/login');
           }
         } else {
           // Email verified - allow access to user pages
-          if (!isUserPage && !isAuthPage) {
+          // Don't redirect if already on a public route or auth page
+          if (!isUserPage && !isAuthPage && !isPublicRoute) {
             router.push('/user');
           }
         }
       } else {
-        // User is signed out - redirect to login if not already on auth pages
-        if (!isAuthPage && pathname !== '/') {
+        // User is signed out - only redirect to login if trying to access protected routes
+        // Allow access to public routes, auth pages, and home page
+        if (!isAuthPage && !isPublicRoute) {
           router.push('/auth/login');
         }
       }

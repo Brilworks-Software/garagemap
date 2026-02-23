@@ -9,6 +9,7 @@ import { useGetInventoryByServiceId } from "@/firebase/hooks/useInventory";
 import { useGetInvoicesByServiceId } from "@/firebase/hooks/useInvoice";
 import { AuthService } from "@/firebase/services/AuthService";
 import { useGetUser } from "@/firebase/hooks/useUser";
+import { formatDate } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -183,7 +184,7 @@ export default function DashboardPage() {
                     <div>
                       <div className="font-mono text-sm font-bold text-white mb-1">{invoice.invoiceNumber}</div>
                       <div className="font-mono text-xs text-[#94a3b8]">Job: {invoice.jobId}</div>
-                      <div className="font-mono text-xs text-[#475569]">{new Date(invoice.issueDate).toLocaleDateString()}</div>
+                      <div className="font-mono text-xs text-[#475569]">{formatDate(invoice.issueDate)}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-mono text-sm font-bold text-white mb-1">${invoice.total}</div>

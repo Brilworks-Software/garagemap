@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
   Package,
-  Menu,
   X,
   LogOut,
   FileText,
   Settings,
   Receipt,
   Car,
+  Menu,
 } from "lucide-react";
 import { colors, colorClasses } from "@/lib/colors";
 import { AuthService } from "@/firebase/services/AuthService";
@@ -53,6 +54,7 @@ export default function UserLayout({
     { name: "Customers", href: "/user/customers", icon: Users },
     { name: "Vehicles", href: "/user/vehicles", icon: Car },
     { name: "Inventory", href: "/user/inventory", icon: Package },
+    { name: "Menu", href: "/user/menu", icon: Menu },
     { name: "Invoices", href: "/user/invoices", icon: Receipt },
     { name: "Configure", href: "/user/configure", icon: Settings },
   ];
@@ -70,29 +72,50 @@ export default function UserLayout({
       <aside
         className={`${colorClasses.sidebarGradient} border-r ${colorClasses.borderDefault} transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-20"
-        } flex flex-col fixed h-screen z-50`}
+        } flex flex-col fixed h-screen z-50 overflow-hidden`}
       >
         {/* Logo */}
-        <div className={`h-20 flex items-center justify-between px-6 border-b ${colorClasses.borderDefault}`}>
+        <div className={`h-20 flex items-center ${sidebarOpen ? 'justify-between px-6' : 'justify-center px-0'} border-b ${colorClasses.borderDefault} relative`}>
           {sidebarOpen && (
-            <Link href="/user" className="flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-xl">
-              <div className={`w-5 h-5 ${colorClasses.iconBgBlue} shadow-[0_0_15px_${colors.primary.blue}] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)]`} style={{ boxShadow: `0 0 15px ${colors.primary.blue}` }}></div>
-              GARAGEMAP
-            </Link>
+            <>
+              <Link href="/user" className="flex items-center gap-2.5 font-mono font-bold tracking-[-2px] text-xl">
+                <Image 
+                  src="/logo.png" 
+                  alt="GarageMap Logo" 
+                  width={40} 
+                  height={40} 
+                  className="object-contain"
+                />
+                GARAGEMAP
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className={`${colorClasses.textSecondary} ${colorClasses.textCyan.replace('text-', 'hover:text-')} transition-colors hover:bg-white/5 p-2 rounded`}
+                title="Close sidebar"
+              >
+                <X size={20} />
+              </button>
+            </>
           )}
           {!sidebarOpen && (
-            <div className={`w-5 h-5 ${colorClasses.iconBgBlue} shadow-[0_0_15px_${colors.primary.blue}] [clip-path:polygon(25%_0%,100%_0%,75%_100%,0%_100%)] mx-auto`} style={{ boxShadow: `0 0 15px ${colors.primary.blue}` }}></div>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="flex items-center justify-center w-full h-full hover:bg-white/5 transition-colors cursor-pointer"
+              title="Open sidebar"
+            >
+              <Image 
+                src="/logo.png" 
+                alt="GarageMap Logo" 
+                width={40} 
+                height={40} 
+                className="object-contain"
+              />
+            </button>
           )}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`${colorClasses.textSecondary} ${colorClasses.textCyan.replace('text-', 'hover:text-')} transition-colors`}
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto flex-col">
+        <nav className="flex-1 space-y-1 overflow-y-auto overflow-x-hidden flex-col">
           {navItems.map((item) => {
             const active = isActive(item.href);
             return (
@@ -100,14 +123,14 @@ export default function UserLayout({
                 <div className="flex">
                   <Link
                     href={item.href}
-                    className={`flex-1 flex gap-3 px-4 py-3 font-mono text-sm uppercase tracking-wider transition-all duration-300 relative group ${
+                    className={`flex-1 flex ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 font-mono text-sm uppercase tracking-wider transition-all duration-300 relative group items-center ${
                       active
                         ? `${colorClasses.badgeInfo.replace('bg-', 'bg-').replace('/20', '/20')} ${colorClasses.textBlue} border-l-2`
                         : `${colorClasses.textSecondary} ${colorClasses.textCyan.replace('text-', 'hover:text-')} hover:bg-white/5`
                     }`}
                     style={active ? { borderColor: colors.primary.blue } : {}}
                   >
-                    <item.icon size={18} />
+                    <item.icon size={18} className={sidebarOpen ? '' : 'mx-auto'} />
                     {sidebarOpen && <span className="">{item.name}</span>}
                     {!sidebarOpen && (
                       <div style={{ backgroundColor: colors.background.surface }} className={`${colorClasses.borderInput} text-xs opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 absolute left-full ml-2 px-3 py-2 border`}>
@@ -123,7 +146,7 @@ export default function UserLayout({
 
         {/* User Section */}
         <div className={`p-4 border-t ${colorClasses.borderDefault}`}>
-          <div className="flex items-center gap-3 px-4 py-3">
+          <div className={`flex items-center ${sidebarOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3`}>
             <div className={`w-10 h-10 rounded-full ${colorClasses.iconBgBlue} border flex items-center justify-center font-mono text-xs`} style={{ borderColor: `${colors.primary.blue}80` }}>
               {userData?.displayName?.[0]?.toUpperCase() || userData?.email?.[0]?.toUpperCase() || "U"}
             </div>
@@ -145,6 +168,15 @@ export default function UserLayout({
             >
               <LogOut size={14} />
               LOGOUT
+            </button>
+          )}
+          {!sidebarOpen && (
+            <button
+              onClick={handleLogout}
+              className={`flex items-center justify-center font-mono text-xs ${colorClasses.textSecondary} ${colorClasses.textRed.replace('text-', 'hover:text-')} transition-colors uppercase tracking-wider py-2 w-full`}
+              title="Logout"
+            >
+              <LogOut size={18} />
             </button>
           )}
         </div>

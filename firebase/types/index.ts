@@ -59,6 +59,8 @@ export interface Vehicle {
 export interface JobWorkItem {
     title: string;
     price: number;
+    inventoryItemId?: string | null; // Reference to inventory item if added from inventory
+    quantity?: number | null; // Quantity used from inventory
 }
 
 export interface Job {
@@ -92,7 +94,7 @@ export interface Invoice {
     tax: number | null;
     discount: number | null;
     total: number;
-    status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+    status: "sent" | "paid" | "overdue" | "cancelled";
     issueDate: Date;
     dueDate: Date | null;
     paidDate: Date | null;
@@ -143,6 +145,20 @@ export interface Part {
     status: "active" | "inactive" | "out-of-stock" | "low-stock" | null;
     description: string | null;
     notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface MenuItem {
+    menuId: string;
+    serviceId: string;
+    title: string; // Work item title/name
+    price: number; // Default price for this work item
+    category: string | null; // e.g., "service", "repair", "maintenance", "parts", "labor"
+    description: string | null; // Optional description
+    inventoryItemId?: string | null; // Reference to inventory item if linked
+    quantity?: number | null; // Quantity from inventory (if linked)
+    status: "active" | "inactive" | null;
     createdAt: Date;
     updatedAt: Date;
 }
