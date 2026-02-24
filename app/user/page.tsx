@@ -9,7 +9,7 @@ import { useGetInventoryByServiceId } from "@/firebase/hooks/useInventory";
 import { useGetInvoicesByServiceId } from "@/firebase/hooks/useInvoice";
 import { AuthService } from "@/firebase/services/AuthService";
 import { useGetUser } from "@/firebase/hooks/useUser";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
 
 export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -133,7 +133,23 @@ export default function DashboardPage() {
                       <div className="font-mono text-xs text-[#475569]">{job.jobDescription || "No Description"}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-mono text-sm font-bold text-white mb-1">${job.jobAmount || 0}</div>
+                      <div className="font-mono text-sm font-bold text-white mb-1">
+                        {(() => {
+                          // Calculate total from work items if available
+                          if (job.jobList) {
+                            try {
+                              const workItems = JSON.parse(job.jobList);
+                              if (Array.isArray(workItems)) {
+                                const total = workItems.reduce((sum: number, item: any) => sum + (item.price || 0), 0);
+                                return formatCurrency(total);
+                              }
+                            } catch (e) {
+                              // If parsing fails, fall back to jobAmount
+                            }
+                          }
+                          return formatCurrency(job.jobAmount);
+                        })()}
+                      </div>
                       <span
                         className={`font-mono text-[0.65rem] uppercase px-2 py-1 ${
                           job.jobStatus === "completed"
@@ -187,7 +203,7 @@ export default function DashboardPage() {
                       <div className="font-mono text-xs text-[#475569]">{formatDate(invoice.issueDate)}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-mono text-sm font-bold text-white mb-1">${invoice.total}</div>
+                      <div className="font-mono text-sm font-bold text-white mb-1">{formatCurrency(invoice.total)}</div>
                       <span
                         className={`font-mono text-[0.65rem] uppercase px-2 py-1 ${
                           invoice.status === "paid"

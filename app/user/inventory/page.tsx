@@ -479,7 +479,7 @@ export default function InventoryPage() {
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                    Cost Price ($)
+                    Cost Price (Rs.)
                   </label>
                   <Input
                     type="number"
@@ -494,7 +494,7 @@ export default function InventoryPage() {
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                    Selling Price ($)
+                    Selling Price (Rs.)
                   </label>
                   <Input
                     type="number"
@@ -970,7 +970,7 @@ export default function InventoryPage() {
               </div>
               <div>
                 <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                  Cost Price ($)
+                  Cost Price (Rs.)
                 </label>
                 <Input
                   type="number"
@@ -984,7 +984,7 @@ export default function InventoryPage() {
               </div>
               <div>
                 <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                  Selling Price ($)
+                  Selling Price (Rs.)
                 </label>
                 <Input
                   type="number"

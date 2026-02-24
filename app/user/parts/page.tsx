@@ -40,11 +40,11 @@ export default function PartsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const parts = [
-    { id: "PART-001", name: "Brake Pads - Front", vehicleType: "Car", stock: 12, price: "$45.00", status: "In Stock", supplier: "AutoParts Co." },
-    { id: "PART-002", name: "Spark Plugs Set", vehicleType: "Car", stock: 28, price: "$8.00", status: "In Stock", supplier: "Engine Parts Ltd." },
-    { id: "PART-003", name: "Timing Belt", vehicleType: "Car", stock: 5, price: "$85.00", status: "Low Stock", supplier: "Belt Systems Inc." },
-    { id: "PART-004", name: "Headlight Assembly", vehicleType: "Car", stock: 8, price: "$120.00", status: "In Stock", supplier: "Lighting Solutions" },
-    { id: "PART-005", name: "Wiper Blades", vehicleType: "Universal", stock: 35, price: "$15.00", status: "In Stock", supplier: "AutoParts Co." },
+    { id: "PART-001", name: "Brake Pads - Front", vehicleType: "Car", stock: 12, price: "Rs. 45.00", status: "In Stock", supplier: "AutoParts Co." },
+    { id: "PART-002", name: "Spark Plugs Set", vehicleType: "Car", stock: 28, price: "Rs. 8.00", status: "In Stock", supplier: "Engine Parts Ltd." },
+    { id: "PART-003", name: "Timing Belt", vehicleType: "Car", stock: 5, price: "Rs. 85.00", status: "Low Stock", supplier: "Belt Systems Inc." },
+    { id: "PART-004", name: "Headlight Assembly", vehicleType: "Car", stock: 8, price: "Rs. 120.00", status: "In Stock", supplier: "Lighting Solutions" },
+    { id: "PART-005", name: "Wiper Blades", vehicleType: "Universal", stock: 35, price: "Rs. 15.00", status: "In Stock", supplier: "AutoParts Co." },
   ];
 
   const filteredParts = parts.filter((part) => {
@@ -128,7 +128,7 @@ export default function PartsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Total Value</p>
-                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>$8,450</p>
+                <p className={`text-2xl font-bold ${colorClasses.textPrimary}`}>Rs. 8,450.00</p>
               </div>
               <div className={`w-12 h-12 ${colorClasses.iconBgCyan} rounded flex items-center justify-center`}>
                 <Boxes className="h-6 w-6" />

@@ -268,9 +268,11 @@ export default function JobsPage() {
     
     // PRIORITY 3: Manual entry (no menu item, no direct inventory selection)
     if (newWorkItem.trim()) {
-      let price: number;
+      // Always use the manually entered price (newWorkItemPrice)
+      // This allows users to edit the price even when inventory is selected
+      const price = parseFloat(newWorkItemPrice) || 0;
       
-      // If inventory is selected in manual entry section, calculate from inventory
+      // If inventory is selected, validate quantity and include inventory info
       if (selectedInventoryItemId && inventoryQuantity) {
         const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
         if (inventoryItem) {
@@ -279,20 +281,18 @@ export default function JobsPage() {
             setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}`);
             return false;
           }
-          price = (inventoryItem.sellingPrice || 0) * quantity;
+          // Use manually entered price, not calculated from inventory
           setJobWorkList([...jobWorkList, { 
             title: newWorkItem.trim(), 
-            price,
+            price, // Use manually entered price
             inventoryItemId: selectedInventoryItemId,
             quantity
           }]);
         } else {
-          price = parseFloat(newWorkItemPrice) || 0;
           setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
         }
       } else {
         // Pure manual entry - use entered price
-        price = parseFloat(newWorkItemPrice) || 0;
         setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
       }
       
@@ -1020,23 +1020,37 @@ export default function JobsPage() {
                 </Label>
                 <SearchableSelect
                   placeholder="Select menu item (optional)"
-                  items={menuItems.map((item: MenuItem) => ({
-                    value: item.menuId,
-                    label: (
-                      <div className="flex items-center justify-between w-full">
-                        <span>{item.title}</span>
-                        <span className={`ml-2 ${colorClasses.textCyan}`}>
-                          Rs. {item.price.toFixed(2)}
-                        </span>
-                      </div>
-                    ),
-                    searchText: item.title,
-                    displayText: item.title,
-                  }))}
-                  value={selectedMenuItemId || ""}
+                  items={[
+                    {
+                      value: "none",
+                      label: "None - Manual Entry",
+                      searchText: "none manual entry",
+                      displayText: "None - Manual Entry",
+                    },
+                    ...menuItems.map((item: MenuItem) => ({
+                      value: item.menuId,
+                      label: (
+                        <div className="flex items-center justify-between w-full">
+                          <span>{item.title}</span>
+                          <span className={`ml-2 ${colorClasses.textCyan}`}>
+                            Rs. {item.price.toFixed(2)}
+                          </span>
+                        </div>
+                      ),
+                      searchText: item.title,
+                      displayText: item.title,
+                    })),
+                  ]}
+                  value={selectedMenuItemId || "none"}
                   onValueChange={(value) => {
-                    setSelectedMenuItemId(value);
-                    if (value && value !== "none") {
+                    if (value === "none") {
+                      setSelectedMenuItemId("");
+                      setNewWorkItem("");
+                      setNewWorkItemPrice("");
+                      setSelectedInventoryItemId("");
+                      setInventoryQuantity("");
+                    } else {
+                      setSelectedMenuItemId(value);
                       const menuItem = menuItems.find((item: MenuItem) => item.menuId === value);
                       if (menuItem) {
                         setNewWorkItem(menuItem.title);
@@ -1051,11 +1065,6 @@ export default function JobsPage() {
                           setInventoryQuantity("");
                         }
                       }
-                    } else {
-                      setNewWorkItem("");
-                      setNewWorkItemPrice("");
-                      setSelectedInventoryItemId("");
-                      setInventoryQuantity("");
                     }
                   }}
                   triggerStyle={{ backgroundColor: colors.background.input }}
@@ -1091,26 +1100,40 @@ export default function JobsPage() {
                         return menuItem.price.toFixed(2);
                       }
                     }
+                    // If inventory item is selected, calculate price from inventory * quantity
+                    if (selectedInventoryItemId && inventoryQuantity && !selectedMenuItemId) {
+                      const inventoryItem = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
+                      if (inventoryItem) {
+                        const qty = parseFloat(inventoryQuantity) || 1;
+                        const calculatedPrice = (inventoryItem.sellingPrice || 0) * qty;
+                        return calculatedPrice.toFixed(2);
+                      }
+                    }
                     return newWorkItemPrice;
                   })()}
                   onChange={(e) => {
-                    // Only allow manual price edit if no menu item is selected
-                    if (!selectedMenuItemId) {
+                    // Only allow manual price edit if no menu item and no inventory item is selected
+                    if (!selectedMenuItemId && !selectedInventoryItemId) {
                       setNewWorkItemPrice(e.target.value);
                     }
                   }}
-                  readOnly={!!selectedMenuItemId}
+                  readOnly={!!selectedMenuItemId || !!selectedInventoryItemId}
                   placeholder="0.00"
                   style={{ 
                     backgroundColor: colors.background.input,
-                    opacity: selectedMenuItemId ? 0.7 : 1,
-                    cursor: selectedMenuItemId ? "not-allowed" : "text"
+                    opacity: (selectedMenuItemId || selectedInventoryItemId) ? 0.7 : 1,
+                    cursor: (selectedMenuItemId || selectedInventoryItemId) ? "not-allowed" : "text"
                   }}
                   className={`${colorClasses.borderInput} font-mono text-sm text-white`}
                 />
                 {selectedMenuItemId && (
                   <p className={`font-mono text-xs ${colorClasses.textCyan} mt-1`}>
                     Price is set from menu item and cannot be edited
+                  </p>
+                )}
+                {selectedInventoryItemId && !selectedMenuItemId && (
+                  <p className={`font-mono text-xs ${colorClasses.textCyan} mt-1`}>
+                    Price is calculated from inventory (Price × Quantity) and cannot be edited
                   </p>
                 )}
               </div>
@@ -1150,11 +1173,19 @@ export default function JobsPage() {
                       if (item && !inventoryQuantity) {
                         setInventoryQuantity("1");
                       }
-                      // Only update price if no menu item is selected (manual entry)
+                      // Auto-fill price from inventory only if no menu item is selected
+                      // Price will be calculated as: inventory price * quantity
                       if (!selectedMenuItemId) {
                         const inventoryItem = inventoryItems.find((inv) => inv.itemId === value);
                         if (inventoryItem) {
-                          setNewWorkItemPrice((inventoryItem.sellingPrice || 0).toString());
+                          // Set quantity to 1 if not set, then calculate price
+                          const qty = inventoryQuantity ? parseFloat(inventoryQuantity) || 1 : 1;
+                          if (!inventoryQuantity) {
+                            setInventoryQuantity("1");
+                          }
+                          // Calculate price: inventory price * quantity
+                          const calculatedPrice = (inventoryItem.sellingPrice || 0) * qty;
+                          setNewWorkItemPrice(calculatedPrice.toFixed(2));
                           setNewWorkItem(inventoryItem.itemName || inventoryItem.itemCode || "Inventory Item");
                         }
                       }
@@ -1175,21 +1206,34 @@ export default function JobsPage() {
                     step="0.01"
                     value={inventoryQuantity}
                     onChange={(e) => {
-                      setInventoryQuantity(e.target.value);
-                      // Only update price if no menu item is selected (manual entry)
-                      // If menu item is selected, keep the menu item price
-                      if (!selectedMenuItemId && selectedInventoryItemId) {
-                        const item = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
-                        if (item && e.target.value) {
-                          const qty = parseFloat(e.target.value) || 1;
-                          setNewWorkItemPrice(((item.sellingPrice || 0) * qty).toFixed(2));
+                      // Only allow editing if no menu item is selected
+                      if (!selectedMenuItemId) {
+                        setInventoryQuantity(e.target.value);
+                        // Auto-update price when quantity changes (price = inventory price * quantity)
+                        if (selectedInventoryItemId) {
+                          const item = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
+                          if (item && e.target.value) {
+                            const qty = parseFloat(e.target.value) || 1;
+                            const calculatedPrice = (item.sellingPrice || 0) * qty;
+                            setNewWorkItemPrice(calculatedPrice.toFixed(2));
+                          }
                         }
                       }
                     }}
+                    readOnly={!!selectedMenuItemId}
                     placeholder="Enter quantity"
-                    style={{ backgroundColor: colors.background.input }}
+                    style={{ 
+                      backgroundColor: colors.background.input,
+                      opacity: selectedMenuItemId ? 0.7 : 1,
+                      cursor: selectedMenuItemId ? "not-allowed" : "text"
+                    }}
                     className={`${colorClasses.borderInput} font-mono text-sm text-white`}
                   />
+                  {selectedMenuItemId && (
+                    <p className={`font-mono text-xs ${colorClasses.textCyan} mt-1`}>
+                      Quantity is set from menu item and cannot be edited
+                    </p>
+                  )}
                   {selectedInventoryItemId && inventoryQuantity && (() => {
                     const item = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
                     const requestedQty = parseFloat(inventoryQuantity);
