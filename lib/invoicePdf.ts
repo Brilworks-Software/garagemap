@@ -158,7 +158,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
     doc.text(descLines, margin + 2, yPos + 8);
     
     // Amount
-    doc.text(`$${item.price.toFixed(2)}`, pageWidth - margin - 2, yPos + 8, { align: 'right' });
+    doc.text(`Rs. ${item.price.toFixed(2)}`, pageWidth - margin - 2, yPos + 8, { align: 'right' });
     
     yPos += Math.max(12, descLines.length * 5);
   });
@@ -172,21 +172,21 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   // Subtotal
   doc.setFontSize(9);
   doc.text('Subtotal:', totalsX, yPos, { align: 'right' });
-  doc.text(`$${data.subtotal.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+  doc.text(`Rs. ${data.subtotal.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
   yPos += 8;
 
   // Tax/GST
   if (data.tax && data.tax > 0) {
     const taxLabel = data.isGST ? 'GST:' : 'Tax:';
     doc.text(taxLabel, totalsX, yPos, { align: 'right' });
-    doc.text(`${data.tax.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+    doc.text(`Rs. ${data.tax.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 8;
   }
 
   // Discount
   if (data.discount && data.discount > 0) {
     doc.text('Discount:', totalsX, yPos, { align: 'right' });
-    doc.text(`-$${data.discount.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+    doc.text(`-Rs. ${data.discount.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 8;
   }
 
@@ -201,7 +201,7 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   doc.setFontSize(12);
   doc.setTextColor(...primaryColor);
   doc.text('TOTAL:', totalsX, yPos, { align: 'right' });
-  doc.text(`$${data.total.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+  doc.text(`Rs. ${data.total.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
 
   // Notes Section
   if (data.notes) {

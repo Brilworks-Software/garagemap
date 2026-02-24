@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -192,11 +193,50 @@ export default function JobsPage() {
     // Clear any previous errors
     setFormError("");
     
-    // Check if menu item is selected and has inventory
+    // Check if menu item is selected FIRST - this takes priority
     const selectedMenuItem = selectedMenuItemId ? menuItems.find((item: MenuItem) => item.menuId === selectedMenuItemId) : null;
     
-    // If inventory item is selected directly in manual entry section
-    if (selectedInventoryItemId && inventoryQuantity) {
+    // PRIORITY 1: If menu item is selected, always use menu item price
+    if (selectedMenuItem && newWorkItem.trim()) {
+      // Always use menu item price, never inventory price
+      const menuPrice = selectedMenuItem.price || 0;
+      
+      // If menu item has inventory linked, validate and include inventory info
+      if (selectedMenuItem.inventoryItemId && selectedMenuItem.quantity) {
+        const inventoryItem = inventoryItems.find(item => item.itemId === selectedMenuItem.inventoryItemId);
+        if (inventoryItem) {
+          const menuQuantity = selectedMenuItem.quantity;
+          if (menuQuantity > inventoryItem.quantity) {
+            setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}, Required: ${menuQuantity}`);
+            return false;
+          }
+        }
+        
+        setJobWorkList([...jobWorkList, { 
+          title: newWorkItem.trim(), 
+          price: menuPrice, // ALWAYS use menu item price
+          inventoryItemId: selectedMenuItem.inventoryItemId,
+          quantity: selectedMenuItem.quantity
+        }]);
+      } else {
+        // Menu item selected but no inventory linked
+        setJobWorkList([...jobWorkList, { 
+          title: newWorkItem.trim(), 
+          price: menuPrice, // ALWAYS use menu item price
+        }]);
+      }
+      
+      setSelectedMenuItemId("");
+      setNewWorkItem("");
+      setNewWorkItemPrice("");
+      setSelectedInventoryItemId("");
+      setInventoryQuantity("");
+      setFormError("");
+      return true;
+    }
+    
+    // PRIORITY 2: If inventory item is selected directly in manual entry section (no menu item)
+    if (selectedInventoryItemId && inventoryQuantity && !selectedMenuItemId) {
       const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
       if (!inventoryItem) {
         setFormError("Selected inventory item not found.");
@@ -220,36 +260,18 @@ export default function JobsPage() {
       }]);
       setSelectedInventoryItemId("");
       setInventoryQuantity("");
-      setSelectedMenuItemId("");
       setNewWorkItem("");
       setNewWorkItemPrice("");
       setFormError("");
       return true;
     }
     
+    // PRIORITY 3: Manual entry (no menu item, no direct inventory selection)
     if (newWorkItem.trim()) {
-      const price = parseFloat(newWorkItemPrice) || 0;
+      let price: number;
       
-      // If menu item is selected and has inventory, include inventory info
-      if (selectedMenuItem && selectedMenuItem.inventoryItemId && selectedMenuItem.quantity) {
-        // Validate inventory quantity
-        const inventoryItem = inventoryItems.find(item => item.itemId === selectedMenuItem.inventoryItemId);
-        if (inventoryItem) {
-          const menuQuantity = selectedMenuItem.quantity;
-          if (menuQuantity > inventoryItem.quantity) {
-            setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}, Required: ${menuQuantity}`);
-            return false;
-          }
-        }
-        
-        setJobWorkList([...jobWorkList, { 
-          title: newWorkItem.trim(), 
-          price,
-          inventoryItemId: selectedMenuItem.inventoryItemId,
-          quantity: selectedMenuItem.quantity
-        }]);
-      } else if (selectedInventoryItemId && inventoryQuantity) {
-        // If inventory is selected in manual entry section
+      // If inventory is selected in manual entry section, calculate from inventory
+      if (selectedInventoryItemId && inventoryQuantity) {
         const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
         if (inventoryItem) {
           const quantity = parseInt(inventoryQuantity) || 1;
@@ -257,17 +279,20 @@ export default function JobsPage() {
             setFormError(`Insufficient stock. Available: ${inventoryItem.quantity} ${inventoryItem.unit || "units"}`);
             return false;
           }
-          const calculatedPrice = (inventoryItem.sellingPrice || 0) * quantity;
+          price = (inventoryItem.sellingPrice || 0) * quantity;
           setJobWorkList([...jobWorkList, { 
             title: newWorkItem.trim(), 
-            price: calculatedPrice,
+            price,
             inventoryItemId: selectedInventoryItemId,
             quantity
           }]);
         } else {
+          price = parseFloat(newWorkItemPrice) || 0;
           setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
         }
       } else {
+        // Pure manual entry - use entered price
+        price = parseFloat(newWorkItemPrice) || 0;
         setJobWorkList([...jobWorkList, { title: newWorkItem.trim(), price }]);
       }
       
@@ -279,6 +304,7 @@ export default function JobsPage() {
       setFormError("");
       return true;
     }
+    
     return false;
   };
 
@@ -507,7 +533,21 @@ export default function JobsPage() {
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null || amount === undefined) return "N/A";
-    return `$${amount.toFixed(2)}`;
+    return `Rs. ${amount.toFixed(2)}`;
+  };
+
+  // Calculate total from work items in job list
+  const calculateJobTotal = (job: Job): number => {
+    if (!job.jobList) return 0;
+    try {
+      const workItems: JobWorkItem[] = JSON.parse(job.jobList);
+      if (Array.isArray(workItems)) {
+        return workItems.reduce((sum, item) => sum + (item.price || 0), 0);
+      }
+    } catch (error) {
+      console.error("Error parsing job list:", error);
+    }
+    return 0;
   };
 
   const getCustomerName = (customerId: string) => {
@@ -816,20 +856,6 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                    Amount ($)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={jobAmount}
-                    onChange={(e) => setJobAmount(e.target.value)}
-                    style={{ backgroundColor: colors.background.input }}
-                    className={colorClasses.borderInput}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Start Date
                   </label>
                   <Input
@@ -921,7 +947,7 @@ export default function JobsPage() {
                           )}
                         </div>
                         <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2 mr-2`}>
-                          ${item.price.toFixed(2)}
+                          Rs. {item.price.toFixed(2)}
                         </span>
                         <Button
                           type="button"
@@ -943,330 +969,6 @@ export default function JobsPage() {
                   </div>
                 )}
               </div>
-
-              {/* Add Work Item Modal */}
-              <Dialog open={isWorkListModalOpen} onOpenChange={setIsWorkListModalOpen}>
-                <DialogContent 
-                  style={{ backgroundColor: colors.background.surface }}
-                  className={`${colorClasses.borderInput} ${colorClasses.textPrimary}`}
-                >
-                  <DialogHeader>
-                    <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
-                      ADD_WORK_ITEM
-                    </DialogTitle>
-                    <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
-                      Add a new item to the job work list
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {/* Error display for work item modal */}
-                    {formError && (
-                      <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
-                        <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
-                      </div>
-                    )}
-                    <>
-                        {/* Select from Menu Option */}
-                        {menuItems.length > 0 && (
-                          <div className={`border-b pb-4 mb-4`} style={{ borderColor: colors.border.input }}>
-                            <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-3 uppercase`}>
-                              Select from Menu
-                            </label>
-                            <Select
-                              value={selectedMenuItemId || "none"}
-                              onValueChange={(value) => {
-                                if (value === "none") {
-                                  setSelectedMenuItemId("");
-                                  setNewWorkItem("");
-                                  setNewWorkItemPrice("");
-                                  setSelectedInventoryItemId("");
-                                  setInventoryQuantity("");
-                                  return;
-                                }
-                                setSelectedMenuItemId(value);
-                                const menuItem = menuItems.find((item: MenuItem) => item.menuId === value);
-                                if (menuItem) {
-                                  setNewWorkItem(menuItem.title);
-                                  setNewWorkItemPrice(menuItem.price.toString());
-                                  // If menu item has inventory linked, populate inventory fields
-                                  if (menuItem.inventoryItemId && menuItem.quantity) {
-                                    setSelectedInventoryItemId(menuItem.inventoryItemId);
-                                    setInventoryQuantity(menuItem.quantity.toString());
-                                  } else {
-                                    setSelectedInventoryItemId(""); // Clear inventory selection
-                                    setInventoryQuantity("");
-                                  }
-                                }
-                              }}
-                            >
-                              <SelectTrigger 
-                                style={{ backgroundColor: colors.background.input }}
-                                className={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
-                              >
-                                <SelectValue placeholder="Select predefined work item (optional)" />
-                              </SelectTrigger>
-                              <SelectContent 
-                                style={{ backgroundColor: colors.background.surface }}
-                                className={colorClasses.borderInput}
-                              >
-                                <SelectItem value="none" className={`${colorClasses.textPrimary} font-mono`}>
-                                  None - Enter manually
-                                </SelectItem>
-                                {menuItems.map((item: MenuItem) => (
-                                  <SelectItem 
-                                    key={item.menuId} 
-                                    value={item.menuId}
-                                    className={`${colorClasses.textPrimary} font-mono`}
-                                  >
-                                    <div className="flex items-center justify-between w-full">
-                                      <span>{item.title}</span>
-                                      <span className={`ml-4 text-xs ${colorClasses.textSecondary}`}>
-                                        {item.category && (
-                                          <Badge className={colorClasses.badgeInfo} style={{ marginRight: '8px' }}>
-                                            {item.category}
-                                          </Badge>
-                                        )}
-                                        {formatCurrency(item.price)}
-                                      </span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {selectedMenuItemId && (() => {
-                              const menuItem = menuItems.find((item: MenuItem) => item.menuId === selectedMenuItemId);
-                              return menuItem ? (
-                                <div className={`font-mono text-xs ${colorClasses.textSecondary} mt-2 space-y-1`}>
-                                  <p>Selected: {menuItem.title} - {formatCurrency(menuItem.price || 0)}</p>
-                                  {menuItem.inventoryItemId && menuItem.quantity && (
-                                    <p className="text-[#22d3ee]">
-                                      Linked Inventory: {inventoryItems.find(i => i.itemId === menuItem.inventoryItemId)?.itemName || "Unknown"} 
-                                      (Qty: {menuItem.quantity})
-                                    </p>
-                                  )}
-                                </div>
-                              ) : null;
-                            })()}
-                          </div>
-                        )}
-
-                        <div>
-                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                            Work Item Description *
-                          </label>
-                          <Input
-                            value={newWorkItem}
-                            onChange={(e) => {
-                              setNewWorkItem(e.target.value);
-                              setSelectedMenuItemId(""); // Clear menu selection when manually typing
-                            }}
-                            style={{ backgroundColor: colors.background.input }}
-                            className={colorClasses.borderInput}
-                            placeholder="e.g., Change engine oil, Replace brake pads"
-                            autoFocus
-                          />
-                        </div>
-                        <div>
-                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                            Price ($)
-                          </label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={newWorkItemPrice}
-                            onChange={(e) => {
-                              setNewWorkItemPrice(e.target.value);
-                              setSelectedMenuItemId(""); // Clear menu selection when manually typing
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleAddWorkItem();
-                              }
-                            }}
-                            style={{ backgroundColor: colors.background.input }}
-                            className={colorClasses.borderInput}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        
-                        {/* Add Inventory Item Option */}
-                        <div className={`border-t pt-4`} style={{ borderColor: colors.border.input }}>
-                          <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-3 uppercase`}>
-                            Or Add from Inventory
-                          </label>
-                          <div className="space-y-3">
-                            <div>
-                              <SearchableSelect
-                                value={selectedInventoryItemId || "none"}
-                                onValueChange={(value) => {
-                                  if (value === "none") {
-                                    setSelectedInventoryItemId("");
-                                    setInventoryQuantity("");
-                                    return;
-                                  }
-                                  setSelectedInventoryItemId(value);
-                                }}
-                                placeholder="Select inventory item (optional)"
-                                searchPlaceholder="Search inventory items..."
-                                items={[
-                                  {
-                                    value: "none",
-                                    label: "None - Manual Entry",
-                                    searchText: "none manual entry",
-                                    displayText: "None - Manual Entry",
-                                  },
-                                  ...inventoryItems.map((item: Inventory) => {
-                                    const isAvailable = item.quantity > 0 && item.status !== "inactive";
-                                    const itemName = item.itemName || item.itemCode || "Unnamed Item";
-                                    return {
-                                      value: item.itemId,
-                                      searchText: itemName,
-                                      displayText: itemName, // Text to show in trigger button
-                                      label: (
-                                        <div className="flex items-center justify-between w-full">
-                                          <span>{itemName}</span>
-                                          <span className={`ml-4 text-xs ${isAvailable ? colorClasses.textSecondary : colorClasses.textRed}`}>
-                                            {item.quantity > 0 ? (
-                                              <>Stock: {item.quantity} {item.unit || ""} | ${item.sellingPrice || 0}/unit</>
-                                            ) : (
-                                              <>Out of Stock</>
-                                            )}
-                                          </span>
-                                        </div>
-                                      ),
-                                      disabled: !isAvailable,
-                                    };
-                                  }),
-                                ]}
-                                triggerStyle={{ backgroundColor: colors.background.input }}
-                                triggerClassName={`${colorClasses.borderInput} ${colorClasses.textPrimary} font-mono`}
-                                contentStyle={{ backgroundColor: colors.background.surface }}
-                                contentClassName={colorClasses.borderInput}
-                                itemClassName={`${colorClasses.textPrimary} font-mono`}
-                                emptyMessage="No inventory items found"
-                              />
-                            </div>
-                            {selectedInventoryItemId && (
-                              <div>
-                                <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                                  Quantity
-                                </label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={inventoryQuantity}
-                                  onChange={(e) => {
-                                    setInventoryQuantity(e.target.value);
-                                    // Clear error when user changes quantity
-                                    if (formError) {
-                                      setFormError("");
-                                    }
-                                    // Auto-fill price from inventory
-                                    const item = inventoryItems.find(i => i.itemId === selectedInventoryItemId);
-                                    if (item && e.target.value) {
-                                      const qty = parseInt(e.target.value) || 1;
-                                      setNewWorkItemPrice(((item.sellingPrice || 0) * qty).toFixed(2));
-                                      setNewWorkItem(item.itemName || item.itemCode || "Inventory Item");
-                                      // Real-time validation
-                                      if (qty > item.quantity) {
-                                        setFormError(`Insufficient stock. Available: ${item.quantity} ${item.unit || "units"}`);
-                                      }
-                                    }
-                                  }}
-                                  style={{ backgroundColor: colors.background.input }}
-                                  className={colorClasses.borderInput}
-                                  placeholder="Enter quantity"
-                                />
-                                <p className={`font-mono text-xs ${colorClasses.textSecondary} mt-1`}>
-                                  Available: {inventoryItems.find(i => i.itemId === selectedInventoryItemId)?.quantity || 0} {inventoryItems.find(i => i.itemId === selectedInventoryItemId)?.unit || "units"}
-                                </p>
-                                {formError && selectedInventoryItemId && (
-                                  <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded mt-2`} style={{ borderColor: `${colors.primary.red}80` }}>
-                                    <p className={`font-mono text-xs ${colorClasses.textRed}`}>{formError}</p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {selectedInventoryItemId && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  const inventoryItem = inventoryItems.find(item => item.itemId === selectedInventoryItemId);
-                                  if (inventoryItem) {
-                                    const quantity = parseInt(inventoryQuantity) || 1;
-                                    if (quantity <= 0) {
-                                      setFormError("Quantity must be greater than 0.");
-                                      return;
-                                    }
-                                    if (quantity > inventoryItem.quantity) {
-                                      setFormError(`Insufficient stock. Available: ${inventoryItem.quantity}`);
-                                      return;
-                                    }
-                                    const price = (inventoryItem.sellingPrice || 0) * quantity;
-                                    setJobWorkList([...jobWorkList, { 
-                                      title: `${inventoryItem.itemName || 'Inventory Item'} (${quantity} ${inventoryItem.unit || 'unit'})`, 
-                                      price,
-                                      inventoryItemId: selectedInventoryItemId,
-                                      quantity
-                                    }]);
-                                    setSelectedInventoryItemId("");
-                                    setInventoryQuantity("");
-                                    setSelectedMenuItemId("");
-                                    setNewWorkItem("");
-                                    setNewWorkItemPrice("");
-                                    setIsWorkListModalOpen(false);
-                                  }
-                                }}
-                                className={`w-full font-mono uppercase ${colorClasses.buttonPrimary}`}
-                                disabled={!selectedInventoryItemId || !inventoryQuantity}
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Inventory Item
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                    </>
-                    <div className="flex gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setIsWorkListModalOpen(false);
-                          setNewWorkItem("");
-                          setNewWorkItemPrice("");
-                          setSelectedInventoryItemId("");
-                          setInventoryQuantity("");
-                          setSelectedMenuItemId("");
-                          setFormError("");
-                        }}
-                        className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary}`}
-                        style={{ color: colors.text.primary }}
-                      >
-                        CANCEL
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          const success = handleAddWorkItem();
-                          // Only close modal if item was successfully added (no error)
-                          if (success) {
-                            setIsWorkListModalOpen(false);
-                          }
-                        }}
-                        className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
-                        disabled={!newWorkItem.trim()}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        ADD ITEM
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
 
               <div className="flex gap-4">
                 <Button
@@ -1294,6 +996,249 @@ export default function JobsPage() {
                 </Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Work Item Modal - Shared between Create and Edit */}
+        <Dialog open={isWorkListModalOpen} onOpenChange={setIsWorkListModalOpen}>
+          <DialogContent 
+            style={{ backgroundColor: colors.background.surface }}
+            className={`${colorClasses.borderInput} ${colorClasses.textPrimary}`}
+          >
+            <DialogHeader>
+              <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
+                ADD_WORK_ITEM
+              </DialogTitle>
+              <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
+                Add a new item to the job work list
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                  Select from Menu
+                </Label>
+                <SearchableSelect
+                  placeholder="Select menu item (optional)"
+                  items={menuItems.map((item: MenuItem) => ({
+                    value: item.menuId,
+                    label: (
+                      <div className="flex items-center justify-between w-full">
+                        <span>{item.title}</span>
+                        <span className={`ml-2 ${colorClasses.textCyan}`}>
+                          Rs. {item.price.toFixed(2)}
+                        </span>
+                      </div>
+                    ),
+                    searchText: item.title,
+                    displayText: item.title,
+                  }))}
+                  value={selectedMenuItemId || ""}
+                  onValueChange={(value) => {
+                    setSelectedMenuItemId(value);
+                    if (value && value !== "none") {
+                      const menuItem = menuItems.find((item: MenuItem) => item.menuId === value);
+                      if (menuItem) {
+                        setNewWorkItem(menuItem.title);
+                        // Always use menu item price, not inventory price
+                        // Format price to 2 decimal places
+                        setNewWorkItemPrice(menuItem.price.toFixed(2));
+                        if (menuItem.inventoryItemId) {
+                          setSelectedInventoryItemId(menuItem.inventoryItemId);
+                          setInventoryQuantity(menuItem.quantity?.toString() || "1");
+                        } else {
+                          setSelectedInventoryItemId("");
+                          setInventoryQuantity("");
+                        }
+                      }
+                    } else {
+                      setNewWorkItem("");
+                      setNewWorkItemPrice("");
+                      setSelectedInventoryItemId("");
+                      setInventoryQuantity("");
+                    }
+                  }}
+                  triggerStyle={{ backgroundColor: colors.background.input }}
+                  contentStyle={{ backgroundColor: colors.background.surface }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                  Work Item Title *
+                </Label>
+                <Input
+                  value={newWorkItem}
+                  onChange={(e) => setNewWorkItem(e.target.value)}
+                  placeholder="Enter work item title"
+                  style={{ backgroundColor: colors.background.input }}
+                  className={`${colorClasses.borderInput} font-mono text-sm text-white`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                  Price (Rs.) *
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={(() => {
+                    // If menu item is selected, always show menu item price
+                    if (selectedMenuItemId) {
+                      const menuItem = menuItems.find((item: MenuItem) => item.menuId === selectedMenuItemId);
+                      if (menuItem) {
+                        return menuItem.price.toFixed(2);
+                      }
+                    }
+                    return newWorkItemPrice;
+                  })()}
+                  onChange={(e) => {
+                    // Only allow manual price edit if no menu item is selected
+                    if (!selectedMenuItemId) {
+                      setNewWorkItemPrice(e.target.value);
+                    }
+                  }}
+                  readOnly={!!selectedMenuItemId}
+                  placeholder="0.00"
+                  style={{ 
+                    backgroundColor: colors.background.input,
+                    opacity: selectedMenuItemId ? 0.7 : 1,
+                    cursor: selectedMenuItemId ? "not-allowed" : "text"
+                  }}
+                  className={`${colorClasses.borderInput} font-mono text-sm text-white`}
+                />
+                {selectedMenuItemId && (
+                  <p className={`font-mono text-xs ${colorClasses.textCyan} mt-1`}>
+                    Price is set from menu item and cannot be edited
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                  Inventory Item (Optional)
+                </Label>
+                <SearchableSelect
+                  placeholder="Select inventory item (optional)"
+                  items={[
+                    { value: "none", label: "None - Manual Entry", searchText: "None - Manual Entry", displayText: "None - Manual Entry" },
+                    ...inventoryItems
+                      .filter((item) => item.status === "active")
+                      .map((item) => ({
+                        value: item.itemId,
+                        label: (
+                          <div className="flex items-center justify-between w-full">
+                            <span>{item.itemName || item.itemCode || "Unnamed Item"}</span>
+                            <span className={`ml-2 ${colorClasses.textCyan}`}>
+                              Available: {item.quantity} {item.unit || ""}
+                            </span>
+                          </div>
+                        ),
+                        searchText: item.itemName || item.itemCode || "Unnamed Item",
+                        displayText: item.itemName || item.itemCode || "Unnamed Item",
+                      })),
+                  ]}
+                  value={selectedInventoryItemId || "none"}
+                  onValueChange={(value) => {
+                    if (value === "none") {
+                      setSelectedInventoryItemId("");
+                      setInventoryQuantity("");
+                    } else {
+                      setSelectedInventoryItemId(value);
+                      const item = inventoryItems.find((inv) => inv.itemId === value);
+                      if (item && !inventoryQuantity) {
+                        setInventoryQuantity("1");
+                      }
+                      // Only update price if no menu item is selected (manual entry)
+                      if (!selectedMenuItemId) {
+                        const inventoryItem = inventoryItems.find((inv) => inv.itemId === value);
+                        if (inventoryItem) {
+                          setNewWorkItemPrice((inventoryItem.sellingPrice || 0).toString());
+                          setNewWorkItem(inventoryItem.itemName || inventoryItem.itemCode || "Inventory Item");
+                        }
+                      }
+                    }
+                  }}
+                  triggerStyle={{ backgroundColor: colors.background.input }}
+                  contentStyle={{ backgroundColor: colors.background.surface }}
+                />
+              </div>
+
+              {selectedInventoryItemId && (
+                <div className="space-y-2">
+                  <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                    Quantity
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={inventoryQuantity}
+                    onChange={(e) => {
+                      setInventoryQuantity(e.target.value);
+                      // Only update price if no menu item is selected (manual entry)
+                      // If menu item is selected, keep the menu item price
+                      if (!selectedMenuItemId && selectedInventoryItemId) {
+                        const item = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
+                        if (item && e.target.value) {
+                          const qty = parseFloat(e.target.value) || 1;
+                          setNewWorkItemPrice(((item.sellingPrice || 0) * qty).toFixed(2));
+                        }
+                      }
+                    }}
+                    placeholder="Enter quantity"
+                    style={{ backgroundColor: colors.background.input }}
+                    className={`${colorClasses.borderInput} font-mono text-sm text-white`}
+                  />
+                  {selectedInventoryItemId && inventoryQuantity && (() => {
+                    const item = inventoryItems.find((inv) => inv.itemId === selectedInventoryItemId);
+                    const requestedQty = parseFloat(inventoryQuantity);
+                    const availableQty = item?.quantity || 0;
+                    if (item && requestedQty > availableQty) {
+                      return (
+                        <p className={`font-mono text-xs ${colorClasses.textRed} mt-1`}>
+                          ⚠️ Insufficient stock. Available: {availableQty} {item.unit || ""}, Requested: {requestedQty} {item.unit || ""}
+                        </p>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t" style={{ borderColor: colors.border.input }}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsWorkListModalOpen(false);
+                    setNewWorkItem("");
+                    setNewWorkItemPrice("");
+                    setSelectedMenuItemId("");
+                    setSelectedInventoryItemId("");
+                    setInventoryQuantity("");
+                  }}
+                  className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary}`}
+                >
+                  CANCEL
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const success = handleAddWorkItem();
+                    // Only close modal if item was successfully added (no error)
+                    if (success) {
+                      setIsWorkListModalOpen(false);
+                    }
+                  }}
+                  className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
+                  disabled={!newWorkItem.trim()}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  ADD ITEM
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -1383,20 +1328,6 @@ export default function JobsPage() {
                 </div>
                 <div>
                   <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
-                    Amount ($)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={jobAmount}
-                    onChange={(e) => setJobAmount(e.target.value)}
-                    style={{ backgroundColor: colors.background.input }}
-                    className={colorClasses.borderInput}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
                     Start Date
                   </label>
                   <Input
@@ -1474,7 +1405,7 @@ export default function JobsPage() {
                           {index + 1}. {item.title}
                         </span>
                         <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2 mr-2`}>
-                          ${item.price.toFixed(2)}
+                          Rs. {item.price.toFixed(2)}
                         </span>
                         <Button
                           type="button"
@@ -1637,7 +1568,7 @@ export default function JobsPage() {
                       </div>
                     </TableCell>
                     <TableCell className={`font-mono text-sm font-bold ${colorClasses.textPrimary}`}>
-                      {formatCurrency(job.jobAmount)}
+                      {formatCurrency(calculateJobTotal(job))}
                     </TableCell>
                     <TableCell className={`font-mono text-xs ${colorClasses.textSecondary}`}>
                       {formatDate(job.jobEndDate)}
@@ -1744,7 +1675,7 @@ export default function JobsPage() {
               </div>
               <div>
                 <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>Amount</p>
-                <p className={colorClasses.textPrimary}>{formatCurrency(selectedJob.jobAmount)}</p>
+                <p className={colorClasses.textPrimary}>{formatCurrency(calculateJobTotal(selectedJob))}</p>
               </div>
               <div>
                 <p className={`text-xs ${colorClasses.textSecondary} uppercase mb-1`}>End Date</p>
@@ -1804,7 +1735,7 @@ export default function JobsPage() {
                                     </span>
                                   </div>
                                   <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2`}>
-                                    ${item.price.toFixed(2)}
+                                    Rs. {item.price.toFixed(2)}
                                   </span>
                                 </div>
                               ));

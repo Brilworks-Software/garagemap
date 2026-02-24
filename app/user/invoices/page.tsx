@@ -470,7 +470,7 @@ function InvoicesContent() {
                           {index + 1}. {item.title}
                         </span>
                         <span className={`font-mono text-xs ${colorClasses.textCyan} ml-2`}>
-                          ${item.price.toFixed(2)}
+                          Rs. {item.price.toFixed(2)}
                         </span>
                       </div>
                     ))}

@@ -31,7 +31,7 @@ export function getColor(path: string): string {
  */
 export function formatCurrency(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) return "N/A";
-  return `$${amount.toFixed(2)}`;
+  return `Rs. ${amount.toFixed(2)}`;
 }
 
 /**
