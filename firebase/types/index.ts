@@ -15,6 +15,7 @@ export interface Service {
     serviceId: string;
     serviceType: "garage" | "service" | null;
     serviceName: string | null;
+    serviceGSTNumber: string | null;
     memberCount: number | null;
     phoneNumber: string | null;
     address: string | null;
@@ -159,6 +160,35 @@ export interface MenuItem {
     inventoryItemId?: string | null; // Reference to inventory item if linked
     quantity?: number | null; // Quantity from inventory (if linked)
     status: "active" | "inactive" | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface SaleItem {
+    inventoryItemId: string; // Reference to inventory item
+    itemName: string; // Item name at time of sale
+    itemCode: string | null; // Item code/SKU at time of sale
+    quantity: number; // Quantity sold
+    unit: string | null; // Unit of measurement
+    unitPrice: number; // Selling price per unit at time of sale
+    totalPrice: number; // Total price for this item (quantity * unitPrice)
+    taxRate?: number; // Tax rate in percentage for this specific item
+    taxAmount?: number; // Calculated tax amount for this specific item
+}
+
+export interface Sale {
+    saleId: string;
+    serviceId: string;
+    customerId: string | null; // Optional - for walk-in customers, can be null
+    saleDate: Date; // Date of sale
+    saleItems: SaleItem[]; // Array of items sold
+    subtotal: number; // Subtotal before tax and discount
+    tax: number | null; // Tax amount (if applicable)
+    discount: number | null; // Discount amount (if applicable)
+    totalAmount: number; // Final total amount
+    paymentMethod: "cash" | "card" | "online" | "upi" | "other" | null; // Payment method
+    status: "pending" | "completed" | "cancelled" | "refunded" | null; // Sale status
+    notes: string | null; // Additional notes
     createdAt: Date;
     updatedAt: Date;
 }

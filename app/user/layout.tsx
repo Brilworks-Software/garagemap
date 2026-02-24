@@ -15,6 +15,7 @@ import {
   Receipt,
   Car,
   Menu,
+  ShoppingCart,
 } from "lucide-react";
 import { colors, colorClasses } from "@/lib/colors";
 import { AuthService } from "@/firebase/services/AuthService";
@@ -55,6 +56,7 @@ export default function UserLayout({
     { name: "Vehicles", href: "/user/vehicles", icon: Car },
     { name: "Inventory", href: "/user/inventory", icon: Package },
     { name: "Menu", href: "/user/menu", icon: Menu },
+    { name: "Sell Product", href: "/user/sales", icon: ShoppingCart },
     { name: "Invoices", href: "/user/invoices", icon: Receipt },
     { name: "Configure", href: "/user/configure", icon: Settings },
   ];

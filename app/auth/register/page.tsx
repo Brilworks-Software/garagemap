@@ -30,6 +30,7 @@ export default function RegisterPage() {
   // Step 2: Service info
   const [serviceType, setServiceType] = useState<"garage" | "service" | "">("");
   const [serviceName, setServiceName] = useState("");
+  const [serviceGSTNumber, setServiceGSTNumber] = useState("");
   const [memberCount, setMemberCount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
@@ -82,6 +83,7 @@ export default function RegisterPage() {
         serviceData: {
           serviceType: serviceType as "garage" | "service",
           serviceName: serviceName || null,
+          serviceGSTNumber: serviceGSTNumber || null,
           memberCount: memberCount ? parseInt(memberCount, 10) : null,
           phoneNumber: phoneNumber || null,
           address: address || null,
@@ -360,6 +362,21 @@ export default function RegisterPage() {
                     min="1"
                     className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
                     placeholder="Number of team members"
+                  />
+                </div>
+
+                {/* GST Number */}
+                <div>
+                  <label htmlFor="serviceGSTNumber" className="block font-mono text-[0.65rem] text-[#94a3b8] mb-2 uppercase tracking-wider">
+                    GST_Number
+                  </label>
+                  <input
+                    type="text"
+                    id="serviceGSTNumber"
+                    value={serviceGSTNumber}
+                    onChange={(e) => setServiceGSTNumber(e.target.value)}
+                    className="w-full bg-[#1a1c1e] border border-white/10 px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition-all duration-300 placeholder:text-[#475569]"
+                    placeholder="Enter GST number"
                   />
                 </div>
 

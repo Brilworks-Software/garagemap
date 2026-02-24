@@ -14,8 +14,11 @@ interface InvoiceData {
   subtotal: number;
   tax: number | null;
   discount: number | null;
+  taxRate?: number | null;
+  discountRate?: number | null;
   total: number;
   serviceName: string | null;
+  serviceGSTNumber?: string | null;
   servicePhone: string | null;
   serviceAddress: string | null;
   notes: string | null;
@@ -46,8 +49,6 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   const primaryColor: [number, number, number] = [59, 130, 246]; // Blue
   const darkColor: [number, number, number] = [15, 23, 42]; // Dark blue
   const lightGray: [number, number, number] = [241, 245, 249];
-  const borderGray: [number, number, number] = [226, 232, 240];
-
   // Header Section
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, pageWidth, 50, 'F');
@@ -62,69 +63,77 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   doc.text(`Invoice #: ${data.invoiceNumber}`, pageWidth - margin, 20, { align: 'right' });
   doc.text(`Date: ${formatDate(data.issueDate)}`, pageWidth - margin, 28, { align: 'right' });
 
-  yPos = 60;
+  // Service and Customer Section
+  const leftX = margin;
+  const rightX = pageWidth / 2 + 10;
+  const columnWidth = contentWidth / 2 - 10;
+  let leftY = 60;
+  let rightY = 60;
 
   // Service Information (Left)
   doc.setTextColor(...darkColor);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('FROM:', margin, yPos);
-  yPos += 6;
+  doc.text('FROM:', leftX, leftY);
+  leftY += 6;
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   if (data.serviceName) {
-    doc.text(data.serviceName, margin, yPos);
-    yPos += 5;
+    const serviceNameLines = doc.splitTextToSize(data.serviceName, columnWidth);
+    doc.text(serviceNameLines, leftX, leftY);
+    leftY += serviceNameLines.length * 5;
   }
   if (data.serviceAddress) {
-    const addressLines = doc.splitTextToSize(data.serviceAddress, contentWidth / 2 - 10);
-    doc.text(addressLines, margin, yPos);
-    yPos += addressLines.length * 5;
+    const addressLines = doc.splitTextToSize(data.serviceAddress, columnWidth);
+    doc.text(addressLines, leftX, leftY);
+    leftY += addressLines.length * 5;
   }
   if (data.servicePhone) {
-    doc.text(`Phone: ${data.servicePhone}`, margin, yPos);
-    yPos += 5;
+    const phoneLines = doc.splitTextToSize(`Phone: ${data.servicePhone}`, columnWidth);
+    doc.text(phoneLines, leftX, leftY);
+    leftY += phoneLines.length * 5;
+  }
+  if (data.serviceGSTNumber) {
+    const serviceGstLines = doc.splitTextToSize(`GSTIN: ${data.serviceGSTNumber}`, columnWidth);
+    doc.text(serviceGstLines, leftX, leftY);
+    leftY += serviceGstLines.length * 5;
   }
 
   // Customer Information (Right)
-  const customerX = pageWidth / 2 + 10;
-  yPos = 60;
   doc.setFont('helvetica', 'bold');
-  doc.text('BILL TO:', customerX, yPos);
-  yPos += 6;
+  doc.text('BILL TO:', rightX, rightY);
+  rightY += 6;
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(data.customerName, customerX, yPos);
-  yPos += 5;
+  const customerNameLines = doc.splitTextToSize(data.customerName, columnWidth);
+  doc.text(customerNameLines, rightX, rightY);
+  rightY += customerNameLines.length * 5;
   
   if (data.customerAddress) {
-    const addressLines = doc.splitTextToSize(data.customerAddress, contentWidth / 2 - 10);
-    doc.text(addressLines, customerX, yPos);
-    yPos += addressLines.length * 5;
+    const addressLines = doc.splitTextToSize(data.customerAddress, columnWidth);
+    doc.text(addressLines, rightX, rightY);
+    rightY += addressLines.length * 5;
   }
   if (data.customerEmail) {
-    doc.text(`Email: ${data.customerEmail}`, customerX, yPos);
-    yPos += 5;
+    const emailLines = doc.splitTextToSize(`Email: ${data.customerEmail}`, columnWidth);
+    doc.text(emailLines, rightX, rightY);
+    rightY += emailLines.length * 5;
   }
   if (data.customerPhone) {
-    doc.text(`Phone: ${data.customerPhone}`, customerX, yPos);
-    yPos += 5;
+    const customerPhoneLines = doc.splitTextToSize(`Phone: ${data.customerPhone}`, columnWidth);
+    doc.text(customerPhoneLines, rightX, rightY);
+    rightY += customerPhoneLines.length * 5;
   }
   if (data.isGST && data.gstNumber) {
-    doc.text(`GSTIN: ${data.gstNumber}`, customerX, yPos);
-    yPos += 5;
+    const gstLines = doc.splitTextToSize(`GSTIN: ${data.gstNumber}`, columnWidth);
+    doc.text(gstLines, rightX, rightY);
+    rightY += gstLines.length * 5;
   }
 
-  // Vehicle Information
-  yPos += 5;
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Vehicle: ${data.vehicleInfo}`, margin, yPos);
-
   // Work Items Table
-  yPos += 15;
+  yPos = Math.max(leftY, rightY) + 13;
   checkPageBreak(30);
 
   // Table Header
@@ -168,6 +177,18 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   checkPageBreak(40);
 
   const totalsX = pageWidth - margin - 60;
+  const computedTaxRate =
+    data.taxRate !== null && data.taxRate !== undefined
+      ? data.taxRate
+      : data.tax && data.subtotal > 0
+      ? (data.tax / data.subtotal) * 100
+      : 0;
+  const computedDiscountRate =
+    data.discountRate !== null && data.discountRate !== undefined
+      ? data.discountRate
+      : data.discount && data.subtotal > 0
+      ? (data.discount / data.subtotal) * 100
+      : 0;
   
   // Subtotal
   doc.setFontSize(9);
@@ -176,17 +197,17 @@ export const generateInvoicePDF = (data: InvoiceData): jsPDF => {
   yPos += 8;
 
   // Tax/GST
-  if (data.tax && data.tax > 0) {
+  if ((data.tax && data.tax > 0) || computedTaxRate > 0) {
     const taxLabel = data.isGST ? 'GST:' : 'Tax:';
     doc.text(taxLabel, totalsX, yPos, { align: 'right' });
-    doc.text(`Rs. ${data.tax.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+    doc.text(`${computedTaxRate.toFixed(2)}%`, pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 8;
   }
 
   // Discount
-  if (data.discount && data.discount > 0) {
+  if ((data.discount && data.discount > 0) || computedDiscountRate > 0) {
     doc.text('Discount:', totalsX, yPos, { align: 'right' });
-    doc.text(`-Rs. ${data.discount.toFixed(2)}`, pageWidth - margin - 2, yPos, { align: 'right' });
+    doc.text(`${computedDiscountRate.toFixed(2)}%`, pageWidth - margin - 2, yPos, { align: 'right' });
     yPos += 8;
   }
 

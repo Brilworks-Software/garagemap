@@ -64,6 +64,7 @@ export default function ConfigurePage() {
   // Settings state - initialize from serviceData
   const [serviceName, setServiceName] = useState(serviceData?.serviceName || "");
   const [serviceType, setServiceType] = useState<"garage" | "service" | null>(serviceData?.serviceType || null);
+  const [serviceGSTNumber, setServiceGSTNumber] = useState(serviceData?.serviceGSTNumber || "");
   const [phone, setPhone] = useState(serviceData?.phoneNumber || "");
   const [address, setAddress] = useState(serviceData?.address || "");
   const [memberCount, setMemberCount] = useState(serviceData?.memberCount?.toString() || "");
@@ -77,6 +78,7 @@ export default function ConfigurePage() {
       setServiceName(serviceData.serviceName || "");
       const type = serviceData?.serviceType?.toLowerCase();
       setServiceType(type === "garage" || type === "service" ? type : null);
+      setServiceGSTNumber(serviceData.serviceGSTNumber || "");
       setPhone(serviceData.phoneNumber || "");
       setAddress(serviceData.address || "");
       setMemberCount(serviceData.memberCount?.toString() || "");
@@ -99,6 +101,7 @@ export default function ConfigurePage() {
         data: {
           serviceName: serviceName || null,
           serviceType: serviceType,
+          serviceGSTNumber: serviceGSTNumber || null,
           phoneNumber: phone || null,
           address: address || null,
           memberCount: memberCount ? parseInt(memberCount) : null,
@@ -289,6 +292,19 @@ export default function ConfigurePage() {
                         className={`pl-10 ${colorClasses.borderInput} font-mono text-sm text-white`}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className={`font-mono text-xs ${colorClasses.textSecondary} uppercase`}>
+                      GST Number
+                    </Label>
+                    <Input
+                      value={serviceGSTNumber}
+                      onChange={(e) => setServiceGSTNumber(e.target.value)}
+                      placeholder="Enter GST number"
+                      style={{ backgroundColor: colors.background.input }}
+                      className={`${colorClasses.borderInput} font-mono text-sm text-white`}
+                    />
                   </div>
 
                   <div className="space-y-2">

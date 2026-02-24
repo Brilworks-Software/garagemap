@@ -1914,6 +1914,7 @@ export default function JobsPage() {
                         discount,
                         total,
                         serviceName: serviceData?.serviceName || null,
+                        serviceGSTNumber: serviceData?.serviceGSTNumber || null,
                         servicePhone: serviceData?.phoneNumber || null,
                         serviceAddress: serviceData?.address || null,
                         notes: selectedJob.jobNotes || null,
