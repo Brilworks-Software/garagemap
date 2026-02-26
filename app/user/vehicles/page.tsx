@@ -733,6 +733,9 @@ export default function VehiclesPage() {
                   Company / Model
                 </TableHead>
                 <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
+                  Owner Name
+                </TableHead>
+                <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
                   Year
                 </TableHead>
                 <TableHead className="font-mono text-xs uppercase text-[#94a3b8]">
@@ -752,19 +755,19 @@ export default function VehiclesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={8} className="text-center py-8 text-[#94a3b8] font-mono">
                     Loading vehicles...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#ef4444] font-mono">
+                  <TableCell colSpan={8} className="text-center py-8 text-[#ef4444] font-mono">
                     Error loading vehicles. Please try again.
                   </TableCell>
                 </TableRow>
               ) : filteredVehicles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-[#94a3b8] font-mono">
+                  <TableCell colSpan={8} className="text-center py-8 text-[#94a3b8] font-mono">
                     No vehicles found
                   </TableCell>
                 </TableRow>
@@ -782,6 +785,9 @@ export default function VehiclesPage() {
                       {vehicle.vehicleCompany && vehicle.vehicleModel
                         ? `${vehicle.vehicleCompany} ${vehicle.vehicleModel}`
                         : vehicle.vehicleCompany || vehicle.vehicleModel || vehicle.vehicleName || "N/A"}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm text-white">
+                      {getCustomerName(vehicle.customerId)}
                     </TableCell>
                     <TableCell className="font-mono text-sm text-white">
                       {vehicle.vehicleYear || "N/A"}

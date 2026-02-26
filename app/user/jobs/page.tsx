@@ -1147,7 +1147,11 @@ export default function JobsPage() {
                   items={[
                     { value: "none", label: "None - Manual Entry", searchText: "None - Manual Entry", displayText: "None - Manual Entry" },
                     ...inventoryItems
-                      .filter((item) => item.status === "active")
+                      .filter((item) => {
+                        const hasStock = (item.quantity || 0) > 0;
+                        const isSelectableStatus = item.status !== "inactive" && item.status !== "out-of-stock";
+                        return hasStock && isSelectableStatus;
+                      })
                       .map((item) => ({
                         value: item.itemId,
                         label: (

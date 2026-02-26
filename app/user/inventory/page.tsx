@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   Plus,
+  Upload,
   Search,
   Filter,
   Edit,
@@ -60,6 +61,7 @@ import {
 import { Inventory } from "@/firebase/types";
 import { colors, colorClasses } from "@/lib/colors";
 import { formatCurrency } from "@/lib/utils";
+import * as XLSX from "xlsx";
 
 export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -88,6 +90,16 @@ export default function InventoryPage() {
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState("");
+  const [isBulkUploadDialogOpen, setIsBulkUploadDialogOpen] = useState(false);
+  const [bulkUploadFile, setBulkUploadFile] = useState<File | null>(null);
+  const [bulkUploadError, setBulkUploadError] = useState("");
+  const [bulkUploadSummary, setBulkUploadSummary] = useState<{
+    total: number;
+    created: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
 
   // Get current user
   const currentUser = AuthService.getCurrentUser();
@@ -268,6 +280,166 @@ export default function InventoryPage() {
     setFormError("");
   };
 
+  const normalizeKey = (value: string) => value.toLowerCase().trim().replace(/[\s_-]+/g, "");
+
+  const parseNumberValue = (value: string): number | null => {
+    if (!value) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const normalizeStatusValue = (
+    rawStatus: string,
+    qty: number,
+    minStock: number | null
+  ): "active" | "inactive" | "out-of-stock" | "low-stock" => {
+    const normalized = normalizeKey(rawStatus);
+    if (normalized === "active") return "active";
+    if (normalized === "inactive") return "inactive";
+    if (normalized === "outofstock") return "out-of-stock";
+    if (normalized === "lowstock") return "low-stock";
+
+    if (qty <= 0) return "out-of-stock";
+    if (minStock !== null && qty <= minStock) return "low-stock";
+    return "active";
+  };
+
+  const getMappedValue = (row: Record<string, string>, aliases: string[]): string => {
+    for (const alias of aliases) {
+      const found = row[normalizeKey(alias)];
+      if (found !== undefined && found !== null && found !== "") {
+        return String(found).trim();
+      }
+    }
+    return "";
+  };
+
+  const handleBulkUpload = async () => {
+    setBulkUploadError("");
+    setBulkUploadSummary(null);
+
+    if (!serviceId) {
+      setBulkUploadError("Service ID not found. Please refresh and try again.");
+      return;
+    }
+
+    if (!bulkUploadFile) {
+      setBulkUploadError("Please select a CSV or Excel file first.");
+      return;
+    }
+
+    setIsBulkUploading(true);
+
+    try {
+      const fileBuffer = await bulkUploadFile.arrayBuffer();
+      const workbook = XLSX.read(fileBuffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+
+      if (!firstSheetName) {
+        setBulkUploadError("No sheet found in the uploaded file.");
+        return;
+      }
+
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+        defval: "",
+      });
+
+      if (!rawRows.length) {
+        setBulkUploadError("Uploaded file is empty.");
+        return;
+      }
+
+      let created = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (let index = 0; index < rawRows.length; index++) {
+        const rawRow = rawRows[index];
+        const rowNumber = index + 2;
+        const normalizedRow: Record<string, string> = {};
+
+        Object.entries(rawRow).forEach(([key, value]) => {
+          normalizedRow[normalizeKey(key)] = String(value ?? "").trim();
+        });
+
+        const mappedItemName = getMappedValue(normalizedRow, ["itemName", "name", "item"]);
+        const mappedQuantity = getMappedValue(normalizedRow, ["quantity", "qty", "stock"]);
+
+        if (!mappedItemName) {
+          failed += 1;
+          errors.push(`Row ${rowNumber}: itemName/name is required.`);
+          continue;
+        }
+
+        const quantityValue = parseNumberValue(mappedQuantity);
+        if (quantityValue === null || quantityValue < 0) {
+          failed += 1;
+          errors.push(`Row ${rowNumber}: quantity must be a valid number >= 0.`);
+          continue;
+        }
+
+        const minStockValue = parseNumberValue(
+          getMappedValue(normalizedRow, ["minStockLevel", "minStock", "reorderLevel"])
+        );
+
+        try {
+          await createItemMutation.mutateAsync({
+            serviceId,
+            inventoryData: {
+              itemName: mappedItemName,
+              itemCode: getMappedValue(normalizedRow, ["itemCode", "code", "sku"]) || null,
+              category: getMappedValue(normalizedRow, ["category"]) || null,
+              quantity: quantityValue,
+              unit: getMappedValue(normalizedRow, ["unit"]) || null,
+              costPrice: parseNumberValue(getMappedValue(normalizedRow, ["costPrice", "cost"])),
+              sellingPrice: parseNumberValue(
+                getMappedValue(normalizedRow, ["sellingPrice", "price", "mrp"])
+              ),
+              minStockLevel: minStockValue,
+              maxStockLevel: parseNumberValue(
+                getMappedValue(normalizedRow, ["maxStockLevel", "maxStock"])
+              ),
+              supplier: getMappedValue(normalizedRow, ["supplier"]) || null,
+              location: getMappedValue(normalizedRow, ["location"]) || null,
+              status: normalizeStatusValue(
+                getMappedValue(normalizedRow, ["status"]),
+                quantityValue,
+                minStockValue
+              ),
+              description: getMappedValue(normalizedRow, ["description"]) || null,
+              notes: getMappedValue(normalizedRow, ["notes"]) || null,
+            },
+          });
+
+          created += 1;
+        } catch (error: unknown) {
+          failed += 1;
+          const err = error as Error;
+          errors.push(`Row ${rowNumber}: ${err.message || "Failed to create item."}`);
+        }
+      }
+
+      setBulkUploadSummary({
+        total: rawRows.length,
+        created,
+        failed,
+        errors,
+      });
+
+      if (created > 0 && failed === 0) {
+        setIsBulkUploadDialogOpen(false);
+        setBulkUploadFile(null);
+        setBulkUploadError("");
+        setBulkUploadSummary(null);
+      }
+    } catch {
+      setBulkUploadError("Could not parse file. Upload a valid CSV/XLSX file.");
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
   // Reset form when dialogs close
   useEffect(() => {
     if (!isDialogOpen && !isEditDialogOpen) {
@@ -373,17 +545,140 @@ export default function InventoryPage() {
             {/* // */} MANAGE_STOCK_AND_INVENTORY_ITEMS
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className={`font-mono uppercase ${colorClasses.buttonPrimary}`}>
-              <Plus className="h-4 w-4" />
-              ADD ITEM
-            </Button>
-          </DialogTrigger>
-          <DialogContent 
-            style={{ backgroundColor: colors.background.surface }}
-            className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
-          >
+        <div className="flex items-center gap-2">
+          <Dialog open={isBulkUploadDialogOpen} onOpenChange={setIsBulkUploadDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className={`font-mono uppercase ${colorClasses.buttonSecondary}`}>
+                <Upload className="h-4 w-4" />
+                BULK UPLOAD
+              </Button>
+            </DialogTrigger>
+            <DialogContent
+              style={{ backgroundColor: colors.background.surface }}
+              className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl`}
+            >
+              <DialogHeader>
+                <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
+                  BULK_UPLOAD_INVENTORY
+                </DialogTitle>
+                <DialogDescription className={`${colorClasses.textSecondary} font-mono text-xs`}>
+                  Upload .csv, .xlsx, or .xls file to create inventory items in bulk.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className={`p-3 rounded ${colorClasses.bgSurface} ${colorClasses.borderDefault} border`}>
+                  <p className={`font-mono text-xs ${colorClasses.textSecondary} uppercase mb-2`}>
+                    REQUIRED_COLUMNS
+                  </p>
+                  <p className={`font-mono text-xs ${colorClasses.textPrimary}`}>
+                    itemName (or name), quantity (or qty)
+                  </p>
+                  <p className={`font-mono text-xs ${colorClasses.textSecondary} mt-2`}>
+                    Optional: itemCode, category, unit, costPrice, sellingPrice, minStockLevel,
+                    maxStockLevel, supplier, location, status, description, notes
+                  </p>
+                </div>
+
+                <div>
+                  <label className={`block font-mono text-xs ${colorClasses.textSecondary} mb-2 uppercase`}>
+                    File
+                  </label>
+                  <Input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setBulkUploadFile(file);
+                      setBulkUploadError("");
+                      setBulkUploadSummary(null);
+                    }}
+                    className={colorClasses.iconBgCyan}
+                  />
+                  {bulkUploadFile && (
+                    <p className={`font-mono text-xs ${colorClasses.textSecondary} mt-2`}>
+                      Selected: {bulkUploadFile.name}
+                    </p>
+                  )}
+                </div>
+
+                {bulkUploadError && (
+                  <div className={`${colorClasses.badgeError.replace('hover:bg-[#ef4444]/30', '')} border rounded`} style={{ borderColor: `${colors.primary.red}80` }}>
+                    <p className={`font-mono text-xs ${colorClasses.textRed}`}>{bulkUploadError}</p>
+                  </div>
+                )}
+
+                {bulkUploadSummary && (
+                  <div className={`p-3 rounded ${colorClasses.bgSurface} ${colorClasses.borderDefault} border`}>
+                    <p className={`font-mono text-xs ${colorClasses.textPrimary}`}>
+                      Total rows: {bulkUploadSummary.total}
+                    </p>
+                    <p className={`font-mono text-xs ${colorClasses.textPrimary}`}>
+                      Created: {bulkUploadSummary.created}
+                    </p>
+                    <p className={`font-mono text-xs ${bulkUploadSummary.failed > 0 ? colorClasses.textRed : colorClasses.textPrimary}`}>
+                      Failed: {bulkUploadSummary.failed}
+                    </p>
+                    {bulkUploadSummary.errors.length > 0 && (
+                      <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
+                        {bulkUploadSummary.errors.slice(0, 20).map((msg, idx) => (
+                          <p key={idx} className={`font-mono text-xs ${colorClasses.textRed}`}>
+                            {msg}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsBulkUploadDialogOpen(false);
+                      setBulkUploadFile(null);
+                      setBulkUploadError("");
+                      setBulkUploadSummary(null);
+                    }}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonSecondary} ${colorClasses.textRed}`}
+                  >
+                    CLOSE
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleBulkUpload}
+                    disabled={isBulkUploading || !bulkUploadFile}
+                    className={`flex-1 font-mono uppercase ${colorClasses.buttonPrimary}`}
+                  >
+                    {isBulkUploading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        START IMPORT
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className={`font-mono uppercase ${colorClasses.buttonPrimary}`}>
+                <Plus className="h-4 w-4" />
+                ADD ITEM
+              </Button>
+            </DialogTrigger>
+            <DialogContent 
+              style={{ backgroundColor: colors.background.surface }}
+              className={`${colorClasses.borderInput} ${colorClasses.textPrimary} max-w-2xl max-h-[90vh] overflow-y-auto`}
+            >
             <DialogHeader>
               <DialogTitle className={`font-mono uppercase ${colorClasses.textBlue}`}>
                 ADD_NEW_INVENTORY_ITEM
@@ -639,8 +934,9 @@ export default function InventoryPage() {
                 </Button>
               </div>
             </form>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
